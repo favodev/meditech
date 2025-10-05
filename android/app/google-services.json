@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1018122395869",
+    "project_id": "meditechapp-86337",
+    "storage_bucket": "meditechapp-86337.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018122395869:android:807228bddcd5d73a7d3b34",
+        "android_client_info": {
+          "package_name": "com.example.meditech"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-cmC59u7_cGx8lnj3H6ADb9lHiNGbnFE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
