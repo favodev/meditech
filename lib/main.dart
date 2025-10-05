@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,13 +15,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Hello World',
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Hello World App')),
-        body: const Center(
-          child: Text('Hello World', style: TextStyle(fontSize: 32)),
-        ),
+      title: 'MediTech',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2196F3)),
+        useMaterial3: true,
       ),
+      home: const SplashScreen(),
     );
   }
 }
