@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -47,17 +46,9 @@ class _SplashScreenState extends State<SplashScreen>
     // Navegar a la pantalla principal después de 2.5 segundos
     Timer(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const HomeScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
+        // ✅ Simple: usa la ruta nombrada
+        // La transición se maneja en main.dart con onGenerateRoute
+        Navigator.of(context).pushReplacementNamed('/login');
       }
     });
   }
