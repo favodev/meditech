@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+void main() {
   runApp(const MyApp());
 }
 
@@ -30,7 +26,7 @@ class MyApp extends StatelessWidget {
 
         final routes = <String, WidgetBuilder>{
           '/': (context) => const SplashScreen(),
-          '/home': (context) => const HomeScreen(),
+          '/home': (context) => const MainScreen(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(), // Nueva ruta
         };
@@ -40,10 +36,12 @@ class MyApp extends StatelessWidget {
           // ✅ Transición personalizada para TODAS las rutas
           return PageRouteBuilder(
             settings: settings,
-            pageBuilder: (context, animation, secondaryAnimation) => builder(context),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                builder(context),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
             transitionDuration: const Duration(milliseconds: 500),
           );
         }
