@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Cambia esta URL según tu configuración (localhost para emulador Android)
-  static const String baseUrl = 'http://10.0.2.2:3000'; // Android Emulator
+  // Cambia esta URL según tu configuración
+  static const String baseUrl =
+      'http://192.168.1.83:3000'; // Dispositivo físico
+  // static const String baseUrl = 'http://10.0.2.2:3000'; // Android Emulator
   // static const String baseUrl = 'http://localhost:3000'; // iOS Simulator / Web
-  // static const String baseUrl = 'http://192.168.x.x:3000'; // Dispositivo físico
 
   // Login
   Future<Map<String, dynamic>> login(String email, String password) async {
