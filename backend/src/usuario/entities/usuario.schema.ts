@@ -1,0 +1,81 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+import { TipoUsuario } from '../../common/enums/tipo_usuario.enum';
+import { Especialidades } from 'src/common/enums/especialidades.enum';
+import { Sexo } from 'src/common/enums/sexo.enum';
+import { TipoInstitucion } from 'src/common/enums/tipo_institucion.enum';
+
+@Schema({ _id: false })
+class InstitucionEmbebida {
+  @Prop({ required: true })
+  nombre: string;
+  @Prop({ type: String, enum: Object.values(TipoInstitucion), required: true })
+  tipo_institucion: string;
+}
+
+const InstitucionEmbebidaSchema =
+  SchemaFactory.createForClass(InstitucionEmbebida);
+
+@Schema()
+export class Usuario extends Document {
+  @Prop({
+    type: String,
+    enum: Object.values(TipoUsuario),
+    required: true,
+    index: true,
+  })
+  tipo_usuario: string;
+
+  @Prop({ required: true })
+  nombre: string;
+
+  @Prop({ required: true })
+  apellido: string;
+
+  @Prop({ required: true, unique: true })
+  email: string;
+
+  @Prop()
+  telefono: string;
+
+  @Prop({ required: true })
+  password_hash: string;
+
+  @Prop({ required: true, unique: true })
+  run: string;
+
+  @Prop({ type: String, required: false })
+  currentHashedRefreshToken?: string;
+
+  // -- CAMPOS PACIENTE (Opcionales) ---
+
+  @Prop({ type: String, enum: Object.values(Sexo), required: false })
+  sexo?: string;
+
+  @Prop({ required: false })
+  direccion?: string;
+
+  @Prop({ required: false })
+  fecha_nacimiento?: Date;
+
+  @Prop({ required: false })
+  telefono_emergencia?: string;
+
+  // --- CAMPOS DE MÉDICO (Opcionales) ---
+  @Prop({ type: InstitucionEmbebidaSchema, required: false })
+  institucion?: InstitucionEmbebida;
+
+  @Prop({ type: String, enum: Object.values(Especialidades), required: false })
+  especialidad?: string;
+
+  @Prop({ required: false })
+  telefono_consultorio?: string;
+
+  @Prop({ required: false })
+  anios_experiencia?: number;
+
+  @Prop({ required: false })
+  registro_mpi?: string;
+}
+
+export const UsuarioSchema = SchemaFactory.createForClass(Usuario);

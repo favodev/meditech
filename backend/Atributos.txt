@@ -1,0 +1,45 @@
+** REVISAR WRITE BASH/TRANSACCIONES PARA ACTUALIZACIONES DE DATOS EMBEDIDOS **
+** CONSIDERAR MULTIPLES MINI-COLECCIONES PARA LOS CATALOGOS (ACTUALMENTE EN ENUMS) **
+
+
+Informe (TimeStaps true)
+- Titulo
+- Tipo Informe (Enum del Backend)
+- Observaciones (Opcional)
+- Run Paciente
+- Archivos[{
+    nombre: string
+    descripcion: string
+    formato: string
+    urlNoSign: string }
+]
+
+
+(consideraremos obligatorio subir al menos un archivo por ahora)
+
+** USAR OBJECT ID O TITULO DEL INFORME COMO SUBCARPETA PARA EL CONJUNTO DE ARCHIVOS **
+
+
+** CREAR INDICES EN EL CAMPO RUN DE PACIENTE **
+** INDICE COMPUESTO DENTRE FECHA_LIMITE <-> RUN DE MEDICO **
+permiso-compartir
+- Fecha_limite
+- Nivel de acceso
+- Run Paciente
+- Run Medico
+- Informe [
+    - Titulo
+    - Tipo Informe
+    - Observaciones (si es que existen)
+    - Archivos [
+        {
+            ** simplemente los archivos compartidos **
+        }
+    ]
+]
+
+
+
+
+
+Medicamento

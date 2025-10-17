@@ -1,0 +1,29 @@
+import {
+  IsDate,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { Sexo } from 'src/common/enums/sexo.enum';
+
+export class CreatePacienteDetailsDto {
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(Object.values(Sexo))
+  sexo: string;
+
+  @IsString()
+  @IsNotEmpty()
+  direccion: string;
+
+  @IsDate()
+  @IsNotEmpty()
+  @Transform(({ value }) => new Date(value))
+  fecha_nacimiento: Date;
+
+  @IsString()
+  @IsOptional()
+  telefono_emergencia?: string;
+}

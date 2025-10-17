@@ -1,0 +1,26 @@
+export enum TipoInstitucion {
+  HOSPITAL_PUBLICO = 'Hospital Publico',
+  CESFAM = 'CESFAM',
+  CECOSF = 'CECOSF',
+  POSTA_RURAL = 'Posta Rural',
+  SAPU = 'SAPU',
+  SAR = 'SAR',
+  COSAM = 'COSAM',
+  CDT = 'CDT',
+  CRS = 'CRS',
+  CONSULTORIO_ESPECIALIDADES = 'Consultorio de Especialidades',
+
+  CLINICA = 'Clinica',
+  CONSULTORIO_PRIVADO = 'Consultorio Privado',
+  CENTRO_MEDICO = 'Centro Medico',
+
+  LABORATORIO = 'Laboratorio',
+  BANCO_SANGRE = 'Banco de Sangre',
+  CENTRO_IMAGENOLOGIA = 'Centro de Imagenologia',
+  FARMACIA = 'Farmacia',
+  HOGAR_ANCIANOS = 'Hogar de Ancianos',
+  INSTITUTO_SALUD_PUBLICA = 'Instituto de Salud Publica',
+  INSTITUCIONES_FF_AA = 'Instituciones Fuerzas Armadas',
+  MUTO_SEGURIDAD = 'Mutuo de Seguridad',
+  CENTRAL_ABASTECIMIENTO = 'Central de Abastecimiento',
+}
