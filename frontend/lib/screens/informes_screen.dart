@@ -137,24 +137,33 @@ class _InformesScreenState extends State<InformesScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Nuevo Informe'),
+              title: const Text('Nuevo Informe Médico'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      'Ingresa la información de tu informe médico',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
                     TextField(
                       controller: tituloController,
                       decoration: const InputDecoration(
-                        labelText: 'Título del informe',
+                        labelText: 'Título del informe *',
                         border: OutlineInputBorder(),
+                        hintText: 'Ej: Examen de sangre - Enero 2025',
+                        prefixIcon: Icon(Icons.title),
                       ),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: tipoInforme,
                       decoration: const InputDecoration(
-                        labelText: 'Tipo de informe',
+                        labelText: 'Tipo de informe *',
                         border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.medical_information),
                       ),
                       items: const [
                         DropdownMenuItem(
@@ -183,10 +192,13 @@ class _InformesScreenState extends State<InformesScreen> {
                     TextField(
                       controller: runMedicoController,
                       decoration: const InputDecoration(
-                        labelText: 'RUN del médico',
+                        labelText: 'RUN del médico *',
                         border: OutlineInputBorder(),
                         hintText: '12345678-9',
+                        prefixIcon: Icon(Icons.person),
+                        helperText: 'RUN del médico que emitió el informe',
                       ),
+                      keyboardType: TextInputType.text,
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -194,6 +206,8 @@ class _InformesScreenState extends State<InformesScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Observaciones (opcional)',
                         border: OutlineInputBorder(),
+                        hintText: 'Agrega notas adicionales si lo deseas',
+                        prefixIcon: Icon(Icons.note),
                       ),
                       maxLines: 3,
                     ),
@@ -207,12 +221,12 @@ class _InformesScreenState extends State<InformesScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (tituloController.text.isEmpty ||
-                        runMedicoController.text.isEmpty) {
+                    if (tituloController.text.trim().isEmpty ||
+                        runMedicoController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Por favor complete los campos obligatorios',
+                            'Por favor completa el título y el RUN del médico',
                           ),
                           backgroundColor: Colors.red,
                         ),
@@ -221,10 +235,10 @@ class _InformesScreenState extends State<InformesScreen> {
                     }
 
                     Navigator.pop(context, {
-                      'titulo': tituloController.text,
+                      'titulo': tituloController.text.trim(),
                       'tipoInforme': tipoInforme,
-                      'runMedico': runMedicoController.text,
-                      'observaciones': observacionesController.text,
+                      'runMedico': runMedicoController.text.trim(),
+                      'observaciones': observacionesController.text.trim(),
                     });
                   },
                   child: const Text('Continuar'),
@@ -303,6 +317,140 @@ class _InformesScreenState extends State<InformesScreen> {
         );
       }
     }
+  }
+
+  Future<void> _downloadAllFiles(Informe informe) async {
+    if (informe.archivos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay archivos para descargar'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Mostrar diálogo de confirmación con opciones
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Descargar archivos'),
+        content: Text(
+          '¿Deseas descargar los ${informe.archivos.length} archivo(s) de este informe?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Descargar'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != true) return;
+
+    // Descargar todos los archivos
+    for (var archivo in informe.archivos) {
+      await _downloadFile(archivo.urlpath, archivo.nombre);
+      // Pequeña pausa entre descargas para no saturar
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  void _showShareDialog(Informe informe) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.share, color: Color(0xFF2196F3)),
+            SizedBox(width: 8),
+            Text('Compartir Informe'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Funcionalidad en desarrollo',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Pronto podrás compartir tus informes con médicos de manera segura mediante:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            _buildFeatureItem('Seleccionar qué archivos compartir'),
+            _buildFeatureItem('Elegir el período de acceso'),
+            _buildFeatureItem('Compartir por correo electrónico'),
+            _buildFeatureItem('Revocar acceso en cualquier momento'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Color(0xFF2196F3), size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Esta funcionalidad estará disponible próximamente',
+                      style: TextStyle(fontSize: 12, color: Colors.black87),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, color: Colors.green, size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -419,46 +567,111 @@ class _InformesScreenState extends State<InformesScreen> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Médico: RUN ${informe.runMedico}',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 11,
+                                ),
+                              ),
                             ],
                           ),
                           children: [
-                            if (informe.observaciones != null &&
-                                informe.observaciones!.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  8,
-                                  16,
-                                  8,
-                                ),
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                            // Información del informe
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      const Text(
-                                        'Observaciones:',
+                                      Icon(
+                                        Icons.calendar_today,
+                                        size: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Creado: ${_formatDate(informe.createdAt)}',
                                         style: TextStyle(
-                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey[700],
                                           fontSize: 12,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        informe.observaciones!,
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
                                     ],
                                   ),
-                                ),
+                                  if (informe.observaciones != null &&
+                                      informe.observaciones!.isNotEmpty) ...[
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Row(
+                                            children: [
+                                              Icon(
+                                                Icons.note,
+                                                size: 16,
+                                                color: Colors.blue,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Observaciones:',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            informe.observaciones!,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
+                            ),
                             const Divider(height: 1),
+                            // Lista de archivos
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.attach_file,
+                                    size: 16,
+                                    color: Colors.grey[700],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Archivos del informe:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Colors.grey[800],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             ...informe.archivos.map((archivo) {
                               return ListTile(
                                 dense: true,
@@ -478,16 +691,55 @@ class _InformesScreenState extends State<InformesScreen> {
                                   ),
                                 ),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.open_in_new),
+                                  icon: const Icon(Icons.download),
                                   onPressed: () => _downloadFile(
                                     archivo.urlpath,
                                     archivo.nombre,
                                   ),
                                   color: const Color(0xFF2196F3),
-                                  tooltip: 'Abrir archivo',
+                                  tooltip: 'Descargar archivo',
                                 ),
                               );
                             }).toList(),
+                            const Divider(height: 1),
+                            // Botones de acción
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: () => _downloadAllFiles(informe),
+                                    icon: const Icon(Icons.download, size: 18),
+                                    label: const Text('Descargar Todo'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2196F3),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                  ),
+                                  OutlinedButton.icon(
+                                    onPressed: () => _showShareDialog(informe),
+                                    icon: const Icon(Icons.share, size: 18),
+                                    label: const Text('Compartir'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF2196F3),
+                                      side: const BorderSide(
+                                        color: Color(0xFF2196F3),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       );
