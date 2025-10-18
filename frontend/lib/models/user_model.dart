@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 class UserModel {
   final String id;
@@ -42,14 +43,14 @@ class UserModel {
   // El backend retorna: { usuario: { id, nombre, email, tipo_usuario }, accessToken, refreshToken }
   // NOTA: El RUN NO viene en el objeto usuario, pero SÍ está en el JWT
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    print('\n🔍 ========== UserModel.fromJson ==========');
-    print('📦 JSON recibido: $json');
+    debugPrint('\n🔍 ========== UserModel.fromJson ==========');
+    debugPrint('📦 JSON recibido: $json');
 
     final usuario = json['usuario'] as Map<String, dynamic>?;
     final accessToken = json['accessToken'] ?? json['access_token'] ?? '';
 
-    print('👤 Objeto usuario: $usuario');
-    print(
+    debugPrint('👤 Objeto usuario: $usuario');
+    debugPrint(
       '🔑 Access Token presente: ${accessToken.isNotEmpty ? "SÍ (${accessToken.length} chars)" : "NO"}',
     );
 
@@ -57,18 +58,18 @@ class UserModel {
     String run = '';
 
     if (accessToken.isNotEmpty) {
-      print('🔓 Intentando decodificar JWT...');
+      debugPrint('🔓 Intentando decodificar JWT...');
       final jwtPayload = _decodeJwt(accessToken);
       if (jwtPayload != null) {
         run = jwtPayload['run'] ?? '';
-        print('✅ JWT decodificado exitosamente');
-        print('📋 Payload completo: $jwtPayload');
-        print('🆔 RUN extraído del JWT: ${run.isNotEmpty ? run : "❌ VACÍO"}');
+        debugPrint('✅ JWT decodificado exitosamente');
+        debugPrint('📋 Payload completo: $jwtPayload');
+        debugPrint('🆔 RUN extraído del JWT: ${run.isNotEmpty ? run : "❌ VACÍO"}');
       } else {
-        print('❌ Error: No se pudo decodificar el JWT');
+        debugPrint('❌ Error: No se pudo decodificar el JWT');
       }
     } else {
-      print('⚠️ No hay access token para decodificar');
+      debugPrint('⚠️ No hay access token para decodificar');
     }
 
     // Si no se pudo extraer del JWT, intentar desde el objeto usuario
@@ -76,19 +77,19 @@ class UserModel {
       final runFromUser = usuario?['run'] ?? json['run'] ?? '';
       if (runFromUser.isNotEmpty) {
         run = runFromUser;
-        print('✅ RUN encontrado en el objeto usuario: $run');
+        debugPrint('✅ RUN encontrado en el objeto usuario: $run');
       }
     }
 
     if (run.isEmpty) {
-      print(
+      debugPrint(
         '⚠️⚠️⚠️ ADVERTENCIA CRÍTICA: No se encontró el RUN del usuario ⚠️⚠️⚠️',
       );
     } else {
-      print('✅✅✅ RUN FINAL: $run ✅✅✅');
+      debugPrint('✅✅✅ RUN FINAL: $run ✅✅✅');
     }
 
-    print('========================================\n');
+    debugPrint('========================================\n');
 
     return UserModel(
       id: usuario?['id'] ?? json['id'] ?? json['_id'] ?? '',
