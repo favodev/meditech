@@ -320,23 +320,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: RadioListTile<TipoUsuarioEnum>(
-                        title: const Text('Paciente'),
-                        value: TipoUsuarioEnum.paciente,
-                        groupValue: _tipoUsuario,
-                        onChanged: (val) => setState(() => _tipoUsuario = val!),
-                        activeColor: const Color(0xFF2196F3),
-                        contentPadding: EdgeInsets.zero,
+                      child: GestureDetector(
+                        onTap: () => setState(
+                          () => _tipoUsuario = TipoUsuarioEnum.paciente,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: _tipoUsuario == TipoUsuarioEnum.paciente
+                                  ? const Color(0xFF2196F3)
+                                  : Colors.grey[300]!,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: _tipoUsuario == TipoUsuarioEnum.paciente
+                                ? const Color(0xFF2196F3).withValues(alpha: 0.1)
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _tipoUsuario == TipoUsuarioEnum.paciente
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: _tipoUsuario == TipoUsuarioEnum.paciente
+                                    ? const Color(0xFF2196F3)
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text('Paciente'),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: RadioListTile<TipoUsuarioEnum>(
-                        title: const Text('Médico'),
-                        value: TipoUsuarioEnum.medico,
-                        groupValue: _tipoUsuario,
-                        onChanged: (val) => setState(() => _tipoUsuario = val!),
-                        activeColor: const Color(0xFF2196F3),
-                        contentPadding: EdgeInsets.zero,
+                      child: GestureDetector(
+                        onTap: () => setState(
+                          () => _tipoUsuario = TipoUsuarioEnum.medico,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: _tipoUsuario == TipoUsuarioEnum.medico
+                                  ? const Color(0xFF2196F3)
+                                  : Colors.grey[300]!,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: _tipoUsuario == TipoUsuarioEnum.medico
+                                ? const Color(0xFF2196F3).withValues(alpha: 0.1)
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _tipoUsuario == TipoUsuarioEnum.medico
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: _tipoUsuario == TipoUsuarioEnum.medico
+                                    ? const Color(0xFF2196F3)
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text('Médico'),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -441,13 +502,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _sexoSeleccionado,
                           decoration: InputDecoration(
                             labelText: 'Sexo *',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
+                          initialValue: _sexoSeleccionado,
                           items: BackendConstants.sexos
                               .map(
                                 (s) =>
@@ -470,8 +531,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               firstDate: DateTime(1900),
                               lastDate: DateTime.now(),
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               setState(() => _fechaNacimiento = picked);
+                            }
                           },
                           child: InputDecorator(
                             decoration: InputDecoration(
@@ -512,13 +574,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _tipoInstitucionSeleccionada,
                           decoration: InputDecoration(
                             labelText: 'Tipo Institución *',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
+                          initialValue: _tipoInstitucionSeleccionada,
                           items: BackendConstants.tiposInstitucion
                               .map(
                                 (t) =>
@@ -534,13 +596,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _especialidadSeleccionada,
                           decoration: InputDecoration(
                             labelText: 'Especialidad *',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
+                          initialValue: _especialidadSeleccionada,
                           items: BackendConstants.especialidades
                               .map(
                                 (e) =>

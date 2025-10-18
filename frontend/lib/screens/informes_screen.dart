@@ -19,7 +19,7 @@ class _InformesScreenState extends State<InformesScreen> {
   final AuthStorage _authStorage = AuthStorage();
 
   bool _isUploading = false;
-  List<Informe> _informes = [];
+  final List<Informe> _informes = [];
   UserModel? _currentUser;
 
   @override
@@ -49,15 +49,7 @@ class _InformesScreenState extends State<InformesScreen> {
     }
 
     try {
-      // Mostrar diálogo para ingresar información del informe
-      final result = await _showInformeDialog();
-      if (result == null) return;
-
-      setState(() {
-        _isUploading = true;
-      });
-
-      // Seleccionar archivos
+      // PRIMERO: Seleccionar archivos
       FilePickerResult? fileResult = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
@@ -65,9 +57,14 @@ class _InformesScreenState extends State<InformesScreen> {
       );
 
       if (fileResult == null || fileResult.files.isEmpty) {
-        setState(() {
-          _isUploading = false;
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No se seleccionaron archivos'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
         return;
       }
 
@@ -76,6 +73,26 @@ class _InformesScreenState extends State<InformesScreen> {
           .map((file) => File(file.path!))
           .toList();
 
+      if (files.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No se pudieron cargar los archivos seleccionados'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // SEGUNDO: Mostrar diálogo para ingresar información del informe
+      final result = await _showInformeDialog(fileCount: files.length);
+      if (result == null) return;
+
+      setState(() {
+        _isUploading = true;
+      });
+
       // Obtener token
       final token = await _authStorage.getToken();
       if (token == null) {
@@ -83,6 +100,12 @@ class _InformesScreenState extends State<InformesScreen> {
       }
 
       // Crear informe con archivos
+      debugPrint('🔄 Enviando informe al servidor...');
+      debugPrint('  Título: ${result['titulo']}');
+      debugPrint('  Tipo: ${result['tipoInforme']}');
+      debugPrint('  RUN Médico: ${result['runMedico']}');
+      debugPrint('  Archivos: ${files.length}');
+
       final informeData = await _apiService.createInforme(
         titulo: result['titulo']!,
         tipoInforme: result['tipoInforme']!,
@@ -92,7 +115,10 @@ class _InformesScreenState extends State<InformesScreen> {
         token: token,
       );
 
+      debugPrint('✅ Respuesta recibida del servidor');
       final nuevoInforme = Informe.fromJson(informeData);
+      debugPrint('  Informe ID: ${nuevoInforme.id}');
+      debugPrint('  Archivos guardados: ${nuevoInforme.archivos.length}');
 
       setState(() {
         _informes.add(nuevoInforme);
@@ -103,7 +129,7 @@ class _InformesScreenState extends State<InformesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Informe "${nuevoInforme.titulo}" creado con ${nuevoInforme.archivos.length} archivo(s)',
+              '✓ Informe "${nuevoInforme.titulo}" creado con ${nuevoInforme.archivos.length} archivo(s)',
             ),
             backgroundColor: Colors.green,
           ),
@@ -119,13 +145,16 @@ class _InformesScreenState extends State<InformesScreen> {
           SnackBar(
             content: Text('Error al crear informe: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
     }
   }
 
-  Future<Map<String, String>?> _showInformeDialog() async {
+  Future<Map<String, String>?> _showInformeDialog({
+    required int fileCount,
+  }) async {
     final tituloController = TextEditingController();
     final runMedicoController = TextEditingController();
     final observacionesController = TextEditingController();
@@ -143,8 +172,33 @@ class _InformesScreenState extends State<InformesScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green[700]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              '$fileCount archivo(s) seleccionado(s)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.green[900],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     const Text(
-                      'Ingresa la información de tu informe médico',
+                      'Completa la información del informe:',
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
@@ -156,15 +210,16 @@ class _InformesScreenState extends State<InformesScreen> {
                         hintText: 'Ej: Examen de sangre - Enero 2025',
                         prefixIcon: Icon(Icons.title),
                       ),
+                      autofocus: true,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: tipoInforme,
                       decoration: const InputDecoration(
                         labelText: 'Tipo de informe *',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.medical_information),
                       ),
+                      initialValue: tipoInforme,
                       items: const [
                         DropdownMenuItem(
                           value: 'Examen',
@@ -197,6 +252,7 @@ class _InformesScreenState extends State<InformesScreen> {
                         hintText: '12345678-9',
                         prefixIcon: Icon(Icons.person),
                         helperText: 'RUN del médico que emitió el informe',
+                        helperMaxLines: 2,
                       ),
                       keyboardType: TextInputType.text,
                     ),
@@ -221,13 +277,22 @@ class _InformesScreenState extends State<InformesScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (tituloController.text.trim().isEmpty ||
-                        runMedicoController.text.trim().isEmpty) {
+                    if (tituloController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Por favor completa el título y el RUN del médico',
+                            'Por favor ingresa un título para el informe',
                           ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (runMedicoController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Por favor ingresa el RUN del médico'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -241,7 +306,11 @@ class _InformesScreenState extends State<InformesScreen> {
                       'observaciones': observacionesController.text.trim(),
                     });
                   },
-                  child: const Text('Continuar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2196F3),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Crear Informe'),
                 ),
               ],
             );
@@ -700,7 +769,7 @@ class _InformesScreenState extends State<InformesScreen> {
                                   tooltip: 'Descargar archivo',
                                 ),
                               );
-                            }).toList(),
+                            }),
                             const Divider(height: 1),
                             // Botones de acción
                             Padding(

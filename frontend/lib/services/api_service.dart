@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -186,6 +187,8 @@ class ApiService {
     required String token,
   }) async {
     try {
+      debugPrint('📤 Creando informe con ${files?.length ?? 0} archivo(s)');
+
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/informe'),
@@ -196,8 +199,15 @@ class ApiService {
 
       // Agregar los archivos
       if (files != null && files.isNotEmpty) {
+        debugPrint('📎 Agregando archivos al request:');
         for (var file in files) {
           final fileExtension = file.path.split('.').last.toLowerCase();
+          final fileName = file.path.split('/').last;
+
+          debugPrint('  - Archivo: $fileName');
+          debugPrint('    Path: ${file.path}');
+          debugPrint('    Existe: ${await file.exists()}');
+          debugPrint('    Tamaño: ${await file.length()} bytes');
 
           // Determinar el Content-Type correcto según la extensión
           MediaType contentType;
@@ -233,6 +243,9 @@ class ApiService {
             ),
           );
         }
+        debugPrint('✅ Total de archivos agregados: ${request.files.length}');
+      } else {
+        debugPrint('⚠️ No hay archivos para subir');
       }
 
       // Agregar los datos del informe como JSON
@@ -246,16 +259,30 @@ class ApiService {
 
       request.fields['data'] = jsonEncode(informeData);
 
+      debugPrint('📋 Datos del informe: $informeData');
+      debugPrint('📡 Enviando request a: ${request.url}');
+
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
+      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('  Status: ${response.statusCode}');
+      debugPrint('  Body: ${response.body}');
+
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final result = jsonDecode(response.body);
+        debugPrint('✅ Informe creado exitosamente');
+        debugPrint(
+          '  Archivos en respuesta: ${result['archivos']?.length ?? 0}',
+        );
+        return result;
       } else {
         final error = jsonDecode(response.body);
+        debugPrint('❌ Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al crear informe');
       }
     } catch (e) {
+      debugPrint('❌ Error al crear informe: $e');
       throw Exception('Error al crear informe: $e');
     }
   }
@@ -272,7 +299,7 @@ class ApiService {
       );
     } catch (e) {
       // Ignorar errores en logout
-      print('Error en logout: $e');
+      debugPrint('Error en logout: $e');
     }
   }
 

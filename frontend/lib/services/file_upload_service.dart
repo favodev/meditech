@@ -21,7 +21,7 @@ class FileUploadHelper {
       }
       return null;
     } catch (e) {
-      print('Error al seleccionar archivo: $e');
+      debugPrint('Error al seleccionar archivo: $e');
       return null;
     }
   }
@@ -43,7 +43,7 @@ class FileUploadHelper {
 
       return filePath;
     } catch (e) {
-      print('Error al subir archivo: $e');
+      debugPrint('Error al subir archivo: $e');
       rethrow;
     }
   }
@@ -69,7 +69,7 @@ class FileUploadHelper {
 
       return url;
     } catch (e) {
-      print('Error al obtener URL de descarga: $e');
+      debugPrint('Error al obtener URL de descarga: $e');
       rethrow;
     }
   }
@@ -86,7 +86,7 @@ class FileUploadHelper {
 
       return url;
     } catch (e) {
-      print('Error al obtener URL: $e');
+      debugPrint('Error al obtener URL: $e');
       rethrow;
     }
   }

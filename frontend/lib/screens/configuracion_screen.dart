@@ -91,27 +91,29 @@ class ConfiguracionScreen extends StatelessWidget {
                 // Mostrar diálogo de confirmación
                 final confirm = await showDialog<bool>(
                   context: context,
-                  builder: (context) => AlertDialog(
+                  builder: (dialogContext) => AlertDialog(
                     title: const Text('Cerrar Sesión'),
                     content: const Text(
                       '¿Estás seguro que deseas cerrar sesión?',
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.pop(context, false),
+                        onPressed: () => Navigator.pop(dialogContext, false),
                         child: const Text('Cancelar'),
                       ),
                       TextButton(
-                        onPressed: () => Navigator.pop(context, true),
+                        onPressed: () => Navigator.pop(dialogContext, true),
                         child: const Text('Cerrar Sesión'),
                       ),
                     ],
                   ),
                 );
 
-                if (confirm == true && context.mounted) {
+                if (confirm == true) {
                   await authStorage.logout();
-                  Navigator.pushReplacementNamed(context, '/login');
+                  if (context.mounted) {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  }
                 }
               },
               icon: const Icon(Icons.logout),
