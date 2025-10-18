@@ -40,3 +40,5 @@ export class Informe extends Document {
 }
 
 export const InformeSchema = SchemaFactory.createForClass(Informe);
+
+InformeSchema.index({ run_medico: 1, fecha_limite: 1 });
