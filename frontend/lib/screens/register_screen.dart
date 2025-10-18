@@ -3,16 +3,11 @@ import '../services/api_service.dart';
 
 enum TipoUsuarioEnum { medico, paciente }
 
-// Constantes que coinciden con el backend
+// Constantes del backend
 class BackendConstants {
-  // Tipos de usuario (del backend: TipoUsuario enum)
   static const String tipoMedico = 'Medico';
   static const String tipoPaciente = 'Paciente';
-
-  // Sexos (del backend: Sexo enum)
   static const List<String> sexos = ['Masculino', 'Femenino', 'Otro'];
-
-  // Tipos de institución (del backend: TipoInstitucion enum)
   static const List<String> tiposInstitucion = [
     'Hospital Publico',
     'CESFAM',
@@ -37,8 +32,6 @@ class BackendConstants {
     'Mutuo de Seguridad',
     'Central de Abastecimiento',
   ];
-
-  // Especialidades (del backend: Especialidades enum)
   static const List<String> especialidades = [
     'Cardiologia',
     'Dermatologia',
@@ -102,6 +95,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _apiService = ApiService();
+  final _formKey = GlobalKey<FormState>();
 
   // Controllers comunes
   final _nameController = TextEditingController();
@@ -112,13 +106,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  // Controllers para Paciente
+  // Controllers Paciente
   final _direccionController = TextEditingController();
   final _telefonoEmergenciaController = TextEditingController();
   DateTime? _fechaNacimiento;
   String? _sexoSeleccionado;
 
-  // Controllers para Médico
+  // Controllers Médico
   final _nombreInstitucionController = TextEditingController();
   final _telefonoConsultorioController = TextEditingController();
   final _aniosExperienciaController = TextEditingController();
@@ -126,7 +120,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _tipoInstitucionSeleccionada;
   String? _especialidadSeleccionada;
 
-  // Variables de estado
   TipoUsuarioEnum _tipoUsuario = TipoUsuarioEnum.paciente;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -152,68 +145,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
-    // Validaciones básicas
-    if (_nameController.text.isEmpty ||
-        _apellidoController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _runController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
-      _showErrorDialog('Por favor completa todos los campos obligatorios');
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     if (_passwordController.text != _confirmPasswordController.text) {
       _showErrorDialog('Las contraseñas no coinciden');
       return;
     }
 
-    if (_passwordController.text.length < 6) {
-      _showErrorDialog('La contraseña debe tener al menos 6 caracteres');
+    if (!_acceptTerms) {
+      _showErrorDialog('Debes aceptar los términos y condiciones');
       return;
     }
 
-    // Validaciones específicas por tipo
-    if (_tipoUsuario == TipoUsuarioEnum.paciente) {
-      if (_sexoSeleccionado == null ||
-          _direccionController.text.isEmpty ||
-          _fechaNacimiento == null) {
-        _showErrorDialog('Por favor completa todos los campos de paciente');
-        return;
-      }
-    } else {
-      if (_nombreInstitucionController.text.isEmpty ||
-          _tipoInstitucionSeleccionada == null ||
-          _especialidadSeleccionada == null) {
-        _showErrorDialog(
-          'Por favor completa nombre de institución, tipo y especialidad',
-        );
-        return;
-      }
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       Map<String, dynamic>? medicoDetalle;
       Map<String, dynamic>? pacienteDetalle;
 
       if (_tipoUsuario == TipoUsuarioEnum.paciente) {
-        // Según el backend: CreatePacienteDetailsDto
         pacienteDetalle = {
           'sexo': _sexoSeleccionado!,
           'direccion': _direccionController.text.trim(),
           'fecha_nacimiento': _fechaNacimiento!.toIso8601String(),
         };
-
-        if (_telefonoEmergenciaController.text.trim().isNotEmpty) {
+        if (_telefonoEmergenciaController.text.isNotEmpty) {
           pacienteDetalle['telefono_emergencia'] = _telefonoEmergenciaController
               .text
               .trim();
         }
       } else {
-        // Según el backend: CreateMedicoDetailsDto con institución embebida
         medicoDetalle = {
           'institucion': {
             'nombre': _nombreInstitucionController.text.trim(),
@@ -221,21 +182,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
           },
           'especialidad': _especialidadSeleccionada!,
         };
-
-        if (_telefonoConsultorioController.text.trim().isNotEmpty) {
+        if (_telefonoConsultorioController.text.isNotEmpty) {
           medicoDetalle['telefono_consultorio'] = _telefonoConsultorioController
               .text
               .trim();
         }
-
-        if (_aniosExperienciaController.text.trim().isNotEmpty) {
-          final anios = int.tryParse(_aniosExperienciaController.text.trim());
-          if (anios != null) {
-            medicoDetalle['anios_experiencia'] = anios;
-          }
+        if (_aniosExperienciaController.text.isNotEmpty) {
+          medicoDetalle['anios_experiencia'] = int.tryParse(
+            _aniosExperienciaController.text,
+          );
         }
-
-        if (_registroMpiController.text.trim().isNotEmpty) {
+        if (_registroMpiController.text.isNotEmpty) {
           medicoDetalle['registro_mpi'] = _registroMpiController.text.trim();
         }
       }
@@ -248,7 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         apellido: _apellidoController.text.trim(),
         email: _emailController.text.trim(),
         run: _runController.text.trim(),
-        telefono: _telefonoController.text.trim().isEmpty
+        telefono: _telefonoController.text.isEmpty
             ? null
             : _telefonoController.text.trim(),
         password: _passwordController.text,
@@ -277,15 +234,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        _showErrorDialog('Error al registrarse: ${e.toString()}');
-      }
+      if (mounted) _showErrorDialog('Error: ${e.toString()}');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -305,72 +256,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Future<void> _selectFechaNacimiento() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(2000),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) {
-      setState(() {
-        _fechaNacimiento = picked;
-      });
-    }
-  }
-
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
-    required String hint,
     TextInputType? keyboardType,
     bool obscureText = false,
     Widget? suffixIcon,
-    int maxLines = 1,
+    String? Function(String?)? validator,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      validator: validator ?? (v) => v!.isEmpty ? 'Campo requerido' : null,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: Colors.grey),
-            filled: true,
-            fillColor: Colors.grey[50],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            suffixIcon: suffixIcon,
-          ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
         ),
-        const SizedBox(height: 20),
-      ],
+        suffixIcon: suffixIcon,
+      ),
     );
   }
 
@@ -388,510 +299,336 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Título
-              const Text(
-                'Registrarse',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Crear Cuenta',
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Crea una cuenta para iniciar',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Selector de Tipo de Usuario
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
+                // Tipo de Usuario con Radio Buttons
+                const Text(
+                  'Tipo de usuario',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-                child: Row(
+                const SizedBox(height: 12),
+                Row(
                   children: [
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _tipoUsuario = TipoUsuarioEnum.paciente;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _tipoUsuario == TipoUsuarioEnum.paciente
-                                ? const Color(0xFF2196F3)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
+                      child: RadioListTile<TipoUsuarioEnum>(
+                        title: const Text('Paciente'),
+                        value: TipoUsuarioEnum.paciente,
+                        groupValue: _tipoUsuario,
+                        onChanged: (val) => setState(() => _tipoUsuario = val!),
+                        activeColor: const Color(0xFF2196F3),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<TipoUsuarioEnum>(
+                        title: const Text('Médico'),
+                        value: TipoUsuarioEnum.medico,
+                        groupValue: _tipoUsuario,
+                        onChanged: (val) => setState(() => _tipoUsuario = val!),
+                        activeColor: const Color(0xFF2196F3),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Nombre y Apellido en una fila
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _nameController,
+                        label: 'Nombre *',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _apellidoController,
+                        label: 'Apellido *',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // RUN y Teléfono en una fila
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _runController,
+                        label: 'RUN *',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _telefonoController,
+                        label: 'Teléfono',
+                        keyboardType: TextInputType.phone,
+                        validator: (_) => null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  controller: _emailController,
+                  label: 'Email *',
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+
+                // Contraseñas en una fila
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _passwordController,
+                        label: 'Contraseña *',
+                        obscureText: _obscurePassword,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.person,
-                                color: _tipoUsuario == TipoUsuarioEnum.paciente
-                                    ? Colors.white
-                                    : Colors.grey,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Paciente',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      _tipoUsuario == TipoUsuarioEnum.paciente
-                                      ? Colors.white
-                                      : Colors.grey,
-                                ),
-                              ),
-                            ],
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
                           ),
                         ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _tipoUsuario = TipoUsuarioEnum.medico;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _tipoUsuario == TipoUsuarioEnum.medico
-                                ? const Color(0xFF2196F3)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
+                      child: _buildTextField(
+                        controller: _confirmPasswordController,
+                        label: 'Confirmar *',
+                        obscureText: _obscureConfirmPassword,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.medical_services,
-                                color: _tipoUsuario == TipoUsuarioEnum.medico
-                                    ? Colors.white
-                                    : Colors.grey,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Médico',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: _tipoUsuario == TipoUsuarioEnum.medico
-                                      ? Colors.white
-                                      : Colors.grey,
-                                ),
-                              ),
-                            ],
+                          onPressed: () => setState(
+                            () => _obscureConfirmPassword =
+                                !_obscureConfirmPassword,
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Campos comunes
-              _buildTextField(
-                controller: _nameController,
-                label: 'Nombre *',
-                hint: 'Ingresa tu nombre',
-                keyboardType: TextInputType.name,
-              ),
-              _buildTextField(
-                controller: _apellidoController,
-                label: 'Apellido *',
-                hint: 'Ingresa tu apellido',
-                keyboardType: TextInputType.name,
-              ),
-              _buildTextField(
-                controller: _runController,
-                label: 'RUN *',
-                hint: '12345678-9',
-                keyboardType: TextInputType.text,
-              ),
-              _buildTextField(
-                controller: _emailController,
-                label: 'Correo electrónico *',
-                hint: 'nombre@email.com',
-                keyboardType: TextInputType.emailAddress,
-              ),
-              _buildTextField(
-                controller: _telefonoController,
-                label: 'Teléfono',
-                hint: '+56912345678',
-                keyboardType: TextInputType.phone,
-              ),
-              _buildTextField(
-                controller: _passwordController,
-                label: 'Contraseña *',
-                hint: 'Mínimo 6 caracteres',
-                obscureText: _obscurePassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.grey,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-              ),
-              _buildTextField(
-                controller: _confirmPasswordController,
-                label: 'Confirmar contraseña *',
-                hint: 'Repite tu contraseña',
-                obscureText: _obscureConfirmPassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirmPassword
-                        ? Icons.visibility_off
-                        : Icons.visibility,
-                    color: Colors.grey,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscureConfirmPassword = !_obscureConfirmPassword;
-                    });
-                  },
-                ),
-              ),
-
-              // Campos específicos según tipo de usuario
-              if (_tipoUsuario == TipoUsuarioEnum.paciente) ...[
-                // Campos de Paciente
-                const Text(
-                  'Sexo *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _sexoSeleccionado,
-                  decoration: InputDecoration(
-                    hintText: 'Selecciona tu sexo',
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF2196F3),
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                  items: BackendConstants.sexos.map((sexo) {
-                    return DropdownMenuItem(value: sexo, child: Text(sexo));
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _sexoSeleccionado = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: _direccionController,
-                  label: 'Dirección *',
-                  hint: 'Calle, Número, Ciudad',
-                  maxLines: 2,
-                ),
-                const Text(
-                  'Fecha de Nacimiento *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                InkWell(
-                  onTap: _selectFechaNacimiento,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _fechaNacimiento == null
-                              ? 'Selecciona tu fecha de nacimiento'
-                              : '${_fechaNacimiento!.day}/${_fechaNacimiento!.month}/${_fechaNacimiento!.year}',
-                          style: TextStyle(
-                            color: _fechaNacimiento == null
-                                ? Colors.grey
-                                : Colors.black87,
-                          ),
-                        ),
-                        const Icon(Icons.calendar_today, color: Colors.grey),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: _telefonoEmergenciaController,
-                  label: 'Teléfono de Emergencia',
-                  hint: '+56912345678',
-                  keyboardType: TextInputType.phone,
-                ),
-              ] else ...[
-                // Campos de Médico
-                _buildTextField(
-                  controller: _nombreInstitucionController,
-                  label: 'Nombre de Institución *',
-                  hint: 'Hospital Regional de Valdivia',
-                ),
-                const Text(
-                  'Tipo de Institución *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _tipoInstitucionSeleccionada,
-                  decoration: InputDecoration(
-                    hintText: 'Selecciona el tipo',
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF2196F3),
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                  items: BackendConstants.tiposInstitucion.map((tipo) {
-                    return DropdownMenuItem<String>(
-                      value: tipo,
-                      child: Text(tipo),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _tipoInstitucionSeleccionada = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Especialidad *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _especialidadSeleccionada,
-                  decoration: InputDecoration(
-                    hintText: 'Selecciona tu especialidad',
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF2196F3),
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                  items: BackendConstants.especialidades.map((esp) {
-                    return DropdownMenuItem<String>(
-                      value: esp,
-                      child: Text(esp),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _especialidadSeleccionada = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                _buildTextField(
-                  controller: _telefonoConsultorioController,
-                  label: 'Teléfono Consultorio',
-                  hint: '+56912345678',
-                  keyboardType: TextInputType.phone,
-                ),
-                _buildTextField(
-                  controller: _aniosExperienciaController,
-                  label: 'Años de Experiencia',
-                  hint: '5',
-                  keyboardType: TextInputType.number,
-                ),
-                _buildTextField(
-                  controller: _registroMpiController,
-                  label: 'Registro MPI',
-                  hint: 'MPI-12345',
-                ),
-              ],
-
-              // Checkbox de Términos y Condiciones
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: _acceptTerms,
-                      onChanged: (value) {
-                        setState(() {
-                          _acceptTerms = value ?? false;
-                        });
-                      },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      side: BorderSide(color: Colors.grey[400]!),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _acceptTerms = !_acceptTerms;
-                        });
-                      },
-                      child: RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.black87,
-                            height: 1.5,
-                          ),
-                          children: [
-                            TextSpan(text: 'Acepto los '),
-                            TextSpan(
-                              text: 'Términos y Condiciones',
-                              style: TextStyle(
-                                color: Color(0xFF2196F3),
-                                fontWeight: FontWeight.w500,
-                              ),
+                // Campos específicos
+                if (_tipoUsuario == TipoUsuarioEnum.paciente) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _sexoSeleccionado,
+                          decoration: InputDecoration(
+                            labelText: 'Sexo *',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            TextSpan(text: ' y la '),
-                            TextSpan(
-                              text: 'Política de Privacidad',
-                              style: TextStyle(
-                                color: Color(0xFF2196F3),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            TextSpan(text: '.'),
-                          ],
+                          ),
+                          items: BackendConstants.sexos
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                          onChanged: (v) =>
+                              setState(() => _sexoSeleccionado = v),
+                          validator: (v) =>
+                              v == null ? 'Campo requerido' : null,
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime(2000),
+                              firstDate: DateTime(1900),
+                              lastDate: DateTime.now(),
+                            );
+                            if (picked != null)
+                              setState(() => _fechaNacimiento = picked);
+                          },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: 'Fecha Nacimiento *',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              _fechaNacimiento == null
+                                  ? 'Seleccionar'
+                                  : '${_fechaNacimiento!.day}/${_fechaNacimiento!.month}/${_fechaNacimiento!.year}',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _direccionController,
+                    label: 'Dirección *',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _telefonoEmergenciaController,
+                    label: 'Teléfono Emergencia',
+                    keyboardType: TextInputType.phone,
+                    validator: (_) => null,
+                  ),
+                ] else ...[
+                  _buildTextField(
+                    controller: _nombreInstitucionController,
+                    label: 'Nombre Institución *',
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _tipoInstitucionSeleccionada,
+                          decoration: InputDecoration(
+                            labelText: 'Tipo Institución *',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          items: BackendConstants.tiposInstitucion
+                              .map(
+                                (t) =>
+                                    DropdownMenuItem(value: t, child: Text(t)),
+                              )
+                              .toList(),
+                          onChanged: (v) =>
+                              setState(() => _tipoInstitucionSeleccionada = v),
+                          validator: (v) =>
+                              v == null ? 'Campo requerido' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _especialidadSeleccionada,
+                          decoration: InputDecoration(
+                            labelText: 'Especialidad *',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          items: BackendConstants.especialidades
+                              .map(
+                                (e) =>
+                                    DropdownMenuItem(value: e, child: Text(e)),
+                              )
+                              .toList(),
+                          onChanged: (v) =>
+                              setState(() => _especialidadSeleccionada = v),
+                          validator: (v) =>
+                              v == null ? 'Campo requerido' : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          controller: _telefonoConsultorioController,
+                          label: 'Tel. Consultorio',
+                          validator: (_) => null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTextField(
+                          controller: _aniosExperienciaController,
+                          label: 'Años Experiencia',
+                          keyboardType: TextInputType.number,
+                          validator: (_) => null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _registroMpiController,
+                    label: 'Registro MPI',
+                    validator: (_) => null,
                   ),
                 ],
-              ),
-              const SizedBox(height: 32),
 
-              // Botón de Registro
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: (_acceptTerms && !_isLoading)
-                      ? _handleRegister
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2196F3),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[300],
-                    disabledForegroundColor: Colors.grey[500],
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                const SizedBox(height: 24),
+
+                // Checkbox términos
+                CheckboxListTile(
+                  title: const Text(
+                    'Acepto términos y condiciones',
+                    style: TextStyle(fontSize: 14),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Registrarse',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                  value: _acceptTerms,
+                  onChanged: (v) => setState(() => _acceptTerms = v ?? false),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: const Color(0xFF2196F3),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+
+                const SizedBox(height: 24),
+
+                // Botón registrarse
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleRegister,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2196F3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          )
+                        : const Text(
+                            'Registrarse',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
