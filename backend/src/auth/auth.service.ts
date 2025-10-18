@@ -30,6 +30,7 @@ export class AuthService {
     const tokens = await this.getTokens(
       (user._id as Types.ObjectId).toString(),
       user.email,
+      user.run,
     );
 
     await this.updateRefreshTokenHash(
@@ -94,6 +95,7 @@ export class AuthService {
     const tokens = await this.getTokens(
       (user._id as Types.ObjectId).toString(),
       user.email,
+      user.run,
     );
 
     await this.updateRefreshTokenHash(
@@ -155,8 +157,8 @@ export class AuthService {
     });
   }
 
-  private async getTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
+  private async getTokens(userId: string, email: string, run: string) {
+    const payload = { sub: userId, email, run };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

@@ -34,7 +34,6 @@ export class JwtRefreshStrategy extends PassportStrategy(
 
     return {
       userId: payload.sub,
-      email: payload.email,
       refreshToken,
     };
   }

@@ -1,34 +1,42 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { InformeService } from './informe.service';
 import { CreateInformeDto } from './dto/create-informe.dto';
-import { UpdateInformeDto } from './dto/update-informe.dto';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @Controller('informe')
+@UseGuards(AuthGuard('jwt'))
 export class InformeController {
   constructor(private readonly informeService: InformeService) {}
 
   @Post()
-  create(@Body() createInformeDto: CreateInformeDto) {
-    return this.informeService.create(createInformeDto);
-  }
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 10 }]))
+  async create(
+    @Request() req,
+    @UploadedFiles() files: { files?: Express.Multer.File[] },
+    @Body('data') data: any,
+  ) {
+    const parseData = JSON.parse(data);
+    const informeDto = plainToInstance(CreateInformeDto, parseData);
+    const errors = await validate(informeDto);
 
-  @Get()
-  findAll() {
-    return this.informeService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.informeService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateInformeDto: UpdateInformeDto) {
-    return this.informeService.update(+id, updateInformeDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.informeService.remove(+id);
+    if (errors.length > 0) {
+      return {
+        message: errors[0].constraints,
+        error: 'Validation failed',
+        statusCode: 400,
+      };
+    }
+    return this.informeService.create(req.user.run, informeDto, files.files);
   }
 }

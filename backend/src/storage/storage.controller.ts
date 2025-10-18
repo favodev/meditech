@@ -24,12 +24,15 @@ export class StorageController {
     @UploadedFile() file: Express.Multer.File,
     @Body('destination') destination: string,
   ) {
-    const fileName = `${Date.now()}-${file.originalname}`;
-    const fullPath = `${destination}/${fileName}`;
-
-    const url = await this.storageService.uploadFile(file, fullPath);
-
-    return { url, fileName };
+    const sanitizedName = file.originalname
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9.\-]/g, '');
+    return await this.storageService.uploadFile(
+      file,
+      destination,
+      sanitizedName,
+    );
   }
 
   @Post('get-download-url')

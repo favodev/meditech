@@ -1,17 +1,18 @@
 ** REVISAR WRITE BASH/TRANSACCIONES PARA ACTUALIZACIONES DE DATOS EMBEDIDOS **
 ** CONSIDERAR MULTIPLES MINI-COLECCIONES PARA LOS CATALOGOS (ACTUALMENTE EN ENUMS) **
 
-
+** Crear Indice en RUN Paciente**
 Informe (TimeStaps true)
 - Titulo
 - Tipo Informe (Enum del Backend)
 - Observaciones (Opcional)
 - Run Paciente
+- Run Medico_emisor
 - Archivos[{
     nombre: string
     descripcion: string
     formato: string
-    urlNoSign: string }
+    urlpath: string }
 ]
 
 

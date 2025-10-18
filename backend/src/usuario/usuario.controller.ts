@@ -12,7 +12,7 @@ import { UsuarioService } from './usuario.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller('usuario')
-@UseGuards(AuthGuard('jwt')) // Protegemos todo el controlador
+@UseGuards(AuthGuard('jwt'))
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 

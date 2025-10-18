@@ -19,9 +19,12 @@ export class StorageService {
   async uploadFile(
     file: Express.Multer.File,
     destinationPath: string,
+    name: string,
   ): Promise<string> {
+    const fileName = `${Date.now()}-${name}`;
+    const fullPath = `${destinationPath}/${fileName}`;
     const bucket = this.storage.bucket(this.bucketName);
-    const blob = bucket.file(destinationPath);
+    const blob = bucket.file(fullPath);
 
     const blobStream = blob.createWriteStream({
       resumable: false,
@@ -30,7 +33,7 @@ export class StorageService {
     return new Promise((resolve, reject) => {
       blobStream.on('error', (err) => reject(err));
       blobStream.on('finish', () => {
-        const publicUrl = `${destinationPath}`;
+        const publicUrl = `${fullPath}`;
         resolve(publicUrl);
       });
       blobStream.end(file.buffer);
