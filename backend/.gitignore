@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# Lock files (optional - solo si usas yarn o pnpm exclusivamente)
+# package-lock.json
+
 # Logs
 logs
 *.log
