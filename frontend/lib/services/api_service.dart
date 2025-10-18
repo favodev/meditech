@@ -198,11 +198,38 @@ class ApiService {
       if (files != null && files.isNotEmpty) {
         for (var file in files) {
           final fileExtension = file.path.split('.').last.toLowerCase();
+
+          // Determinar el Content-Type correcto según la extensión
+          MediaType contentType;
+          switch (fileExtension) {
+            case 'pdf':
+              contentType = MediaType('application', 'pdf');
+              break;
+            case 'jpg':
+            case 'jpeg':
+              contentType = MediaType('image', 'jpeg');
+              break;
+            case 'png':
+              contentType = MediaType('image', 'png');
+              break;
+            case 'doc':
+              contentType = MediaType('application', 'msword');
+              break;
+            case 'docx':
+              contentType = MediaType(
+                'application',
+                'vnd.openxmlformats-officedocument.wordprocessingml.document',
+              );
+              break;
+            default:
+              contentType = MediaType('application', 'octet-stream');
+          }
+
           request.files.add(
             await http.MultipartFile.fromPath(
-              'files', // Nombre del campo según el backend
+              'files',
               file.path,
-              contentType: MediaType('application', fileExtension),
+              contentType: contentType,
             ),
           );
         }
