@@ -1,31 +1,44 @@
 class UserModel {
-  final String idUsuario;
+  final String id;
   final String nombre;
   final String email;
+  final String tipoUsuario;
   final String accessToken;
+  final String refreshToken;
 
   UserModel({
-    required this.idUsuario,
+    required this.id,
     required this.nombre,
     required this.email,
+    required this.tipoUsuario,
     required this.accessToken,
+    required this.refreshToken,
   });
 
+  // El backend retorna: { usuario: { id, nombre, email, tipo_usuario }, accessToken, refreshToken }
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final usuario = json['usuario'] as Map<String, dynamic>?;
+
     return UserModel(
-      idUsuario: json['id_usuario'] ?? json['_id'] ?? '',
-      nombre: json['nombre'] ?? '',
-      email: json['email'] ?? '',
-      accessToken: json['access_token'] ?? '',
+      id: usuario?['id'] ?? json['id'] ?? json['_id'] ?? '',
+      nombre: usuario?['nombre'] ?? json['nombre'] ?? '',
+      email: usuario?['email'] ?? json['email'] ?? '',
+      tipoUsuario: usuario?['tipo_usuario'] ?? json['tipo_usuario'] ?? '',
+      accessToken: json['accessToken'] ?? json['access_token'] ?? '',
+      refreshToken: json['refreshToken'] ?? json['refresh_token'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id_usuario': idUsuario,
-      'nombre': nombre,
-      'email': email,
-      'access_token': accessToken,
+      'usuario': {
+        'id': id,
+        'nombre': nombre,
+        'email': email,
+        'tipo_usuario': tipoUsuario,
+      },
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
     };
   }
 }

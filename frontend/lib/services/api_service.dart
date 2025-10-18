@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 class ApiService {
   static const String baseUrl = 'http://192.168.1.81:3000';
 
+  // Login - según el backend retorna: { usuario: {...}, accessToken, refreshToken }
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
@@ -15,134 +18,195 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Error en login: ${response.body}');
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error en login');
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
   }
 
-  // Register Médico
-  Future<Map<String, dynamic>> registerMedico({
+  // Register Unificado - según el backend usa UnifiedRegisterDto
+  Future<Map<String, dynamic>> register({
+    required String tipoUsuario, // 'Medico' o 'Paciente'
     required String nombre,
     required String apellido,
     required String email,
-    required String telefono,
+    required String run,
+    String? telefono,
     required String password,
-    required String institucionId,
-    required String especialidadId,
-    String? telefonoConsultorio,
-    int? aniosExperiencia,
-    String? registroMpi,
+    Map<String, dynamic>? medicoDetalle,
+    Map<String, dynamic>? pacienteDetalle,
   }) async {
     try {
+      final Map<String, dynamic> body = {
+        'tipo_usuario': tipoUsuario,
+        'nombre': nombre,
+        'apellido': apellido,
+        'email': email,
+        'run': run,
+        'password': password,
+      };
+
+      if (telefono != null && telefono.isNotEmpty) {
+        body['telefono'] = telefono;
+      }
+
+      if (tipoUsuario == 'Medico' && medicoDetalle != null) {
+        body['medico_detalle'] = medicoDetalle;
+      }
+
+      if (tipoUsuario == 'Paciente' && pacienteDetalle != null) {
+        body['paciente_detalle'] = pacienteDetalle;
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/register'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'tipo_usuario': 'Medico',
-          'nombre': nombre,
-          'apellido': apellido,
-          'email': email,
-          'telefono': telefono,
-          'password': password,
-          'medico_detalle': {
-            'institucion': institucionId,
-            'especialidad': especialidadId,
-            'telefono_consultorio': telefonoConsultorio,
-            'anios_experiencia': aniosExperiencia,
-            'registro_mpi': registroMpi,
-          },
-        }),
+        body: jsonEncode(body),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Error en registro: ${response.body}');
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error en registro');
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
   }
 
-  // Register Paciente
-  Future<Map<String, dynamic>> registerPaciente({
-    required String nombre,
-    required String apellido,
-    required String email,
-    required String telefono,
-    required String password,
-    required String sexo,
-    required String direccion,
-    required DateTime fechaNacimiento,
-    String? telefonoEmergencia,
+  // Subir archivo a Google Cloud Storage
+  Future<String> uploadFile({
+    required File file,
+    required String destination,
+    required String token,
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/storage/upload'),
+      );
+
+      // Agregar headers con token JWT
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Agregar el archivo
+      final fileExtension = file.path.split('.').last.toLowerCase();
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          contentType: MediaType('application', fileExtension),
+        ),
+      );
+
+      // Agregar el destino
+      request.fields['destination'] = destination;
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        // El backend retorna directamente el path del archivo como string
+        return response.body.replaceAll('"', ''); // Quitar comillas si las hay
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al subir archivo');
+      }
+    } catch (e) {
+      throw Exception('Error al subir archivo: $e');
+    }
+  }
+
+  // Obtener URL de descarga firmada
+  Future<String> getDownloadUrl({
+    required String path,
+    required String name,
+    required String format,
+    required String token,
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'tipo_usuario': 'Paciente',
-          'nombre': nombre,
-          'apellido': apellido,
-          'email': email,
-          'telefono': telefono,
-          'password': password,
-          'paciente_detalle': {
-            'sexo': sexo,
-            'direccion': direccion,
-            'fecha_nacimiento': fechaNacimiento.toIso8601String(),
-            'telefono_emergencia': telefonoEmergencia,
-          },
-        }),
+        Uri.parse('$baseUrl/storage/get-download-url'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'path': path, 'name': name, 'format': format}),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return data['signedUrl'];
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al obtener URL');
+      }
+    } catch (e) {
+      throw Exception('Error al obtener URL de descarga: $e');
+    }
+  }
+
+  // Obtener URL para abrir/visualizar archivo
+  Future<String> getOpenUrl({
+    required String path,
+    required String token,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/storage/get-open-url'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'path': path}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return data['signedUrl'];
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al obtener URL');
+      }
+    } catch (e) {
+      throw Exception('Error al obtener URL: $e');
+    }
+  }
+
+  // Logout
+  Future<void> logout(String token) async {
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+    } catch (e) {
+      // Ignorar errores en logout
+      print('Error en logout: $e');
+    }
+  }
+
+  // Refresh token
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/refresh'),
+        headers: {'Authorization': 'Bearer $refreshToken'},
+      );
+
+      if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Error en registro: ${response.body}');
+        throw Exception('Error al renovar token');
       }
     } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
-  }
-
-  // Obtener instituciones
-  Future<List<Map<String, dynamic>>> getInstituciones() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/institucion'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Error al obtener instituciones');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
-  }
-
-  // Obtener especialidades
-  Future<List<Map<String, dynamic>>> getEspecialidades() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/especialidad'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Error al obtener especialidades');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
+      throw Exception('Error al renovar token: $e');
     }
   }
 }

@@ -1,7 +1,97 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
-enum TipoUsuario { medico, paciente }
+enum TipoUsuarioEnum { medico, paciente }
+
+// Constantes que coinciden con el backend
+class BackendConstants {
+  // Tipos de usuario (del backend: TipoUsuario enum)
+  static const String tipoMedico = 'Medico';
+  static const String tipoPaciente = 'Paciente';
+
+  // Sexos (del backend: Sexo enum)
+  static const List<String> sexos = ['Masculino', 'Femenino', 'Otro'];
+
+  // Tipos de institución (del backend: TipoInstitucion enum)
+  static const List<String> tiposInstitucion = [
+    'Hospital Publico',
+    'CESFAM',
+    'CECOSF',
+    'Posta Rural',
+    'SAPU',
+    'SAR',
+    'COSAM',
+    'CDT',
+    'CRS',
+    'Consultorio de Especialidades',
+    'Clinica',
+    'Consultorio Privado',
+    'Centro Medico',
+    'Laboratorio',
+    'Banco de Sangre',
+    'Centro de Imagenologia',
+    'Farmacia',
+    'Hogar de Ancianos',
+    'Instituto de Salud Publica',
+    'Instituciones Fuerzas Armadas',
+    'Mutuo de Seguridad',
+    'Central de Abastecimiento',
+  ];
+
+  // Especialidades (del backend: Especialidades enum)
+  static const List<String> especialidades = [
+    'Cardiologia',
+    'Dermatologia',
+    'Pediatria',
+    'Oftalmologia',
+    'Neurologia',
+    'Traumatologia',
+    'Gastroenterologia',
+    'Neumologia',
+    'Endocrinologia',
+    'Nefrologia',
+    'Otorrinolaringologia',
+    'Psiquiatria',
+    'Urologia',
+    'Ginecologia',
+    'Anestesiologia',
+    'Radiologia',
+    'Oncologia',
+    'Hematologia',
+    'Reumatologia',
+    'Medicina Interna',
+    'Medicina Familiar',
+    'Medicina de Urgencias',
+    'Alergologia',
+    'Medicina Fisica y Rehabilitacion',
+    'Cirugia General',
+    'Cirugia Plastica',
+    'Cirugia Cardiovascular',
+    'Cirugia Pediatrica',
+    'Medicina de Cuidados Paliativos',
+    'Geriatria',
+    'Infectologia',
+    'Patologia',
+    'Medicina del Deporte',
+    'Medicina Nuclear',
+    'Genetica Medica',
+    'Epidemiologia',
+    'Salud Publica',
+    'Medicina del Trabajo',
+    'Fisioterapia',
+    'Nutriologia',
+    'Odontologia',
+    'Psicologia Clinica',
+    'Podologia',
+    'Microbiologia',
+    'Bioquimica Clinica',
+    'Toxicologia',
+    'Farmacologia Clinica',
+    'Inmunologia Clinica',
+    'Angiologia',
+    'Neurocirugia',
+  ];
+}
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,6 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _apellidoController = TextEditingController();
   final _emailController = TextEditingController();
+  final _runController = TextEditingController();
   final _telefonoController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -28,66 +119,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _sexoSeleccionado;
 
   // Controllers para Médico
+  final _nombreInstitucionController = TextEditingController();
   final _telefonoConsultorioController = TextEditingController();
   final _aniosExperienciaController = TextEditingController();
   final _registroMpiController = TextEditingController();
-  String? _institucionSeleccionada;
+  String? _tipoInstitucionSeleccionada;
   String? _especialidadSeleccionada;
 
   // Variables de estado
-  TipoUsuario _tipoUsuario = TipoUsuario.paciente;
+  TipoUsuarioEnum _tipoUsuario = TipoUsuarioEnum.paciente;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _acceptTerms = false;
   bool _isLoading = false;
-
-  // Listas para dropdowns
-  List<Map<String, dynamic>> _instituciones = [];
-  List<Map<String, dynamic>> _especialidades = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadInstituciones();
-    _loadEspecialidades();
-  }
-
-  Future<void> _loadInstituciones() async {
-    try {
-      final instituciones = await _apiService.getInstituciones();
-      if (mounted) {
-        setState(() {
-          _instituciones = instituciones;
-        });
-      }
-    } catch (e) {
-      print('Error cargando instituciones: $e');
-    }
-  }
-
-  Future<void> _loadEspecialidades() async {
-    try {
-      final especialidades = await _apiService.getEspecialidades();
-      if (mounted) {
-        setState(() {
-          _especialidades = especialidades;
-        });
-      }
-    } catch (e) {
-      print('Error cargando especialidades: $e');
-    }
-  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _apellidoController.dispose();
     _emailController.dispose();
+    _runController.dispose();
     _telefonoController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _direccionController.dispose();
     _telefonoEmergenciaController.dispose();
+    _nombreInstitucionController.dispose();
     _telefonoConsultorioController.dispose();
     _aniosExperienciaController.dispose();
     _registroMpiController.dispose();
@@ -99,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_nameController.text.isEmpty ||
         _apellidoController.text.isEmpty ||
         _emailController.text.isEmpty ||
-        _telefonoController.text.isEmpty ||
+        _runController.text.isEmpty ||
         _passwordController.text.isEmpty) {
       _showErrorDialog('Por favor completa todos los campos obligatorios');
       return;
@@ -116,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     // Validaciones específicas por tipo
-    if (_tipoUsuario == TipoUsuario.paciente) {
+    if (_tipoUsuario == TipoUsuarioEnum.paciente) {
       if (_sexoSeleccionado == null ||
           _direccionController.text.isEmpty ||
           _fechaNacimiento == null) {
@@ -124,9 +181,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
     } else {
-      if (_institucionSeleccionada == null ||
+      if (_nombreInstitucionController.text.isEmpty ||
+          _tipoInstitucionSeleccionada == null ||
           _especialidadSeleccionada == null) {
-        _showErrorDialog('Por favor selecciona institución y especialidad');
+        _showErrorDialog(
+          'Por favor completa nombre de institución, tipo y especialidad',
+        );
         return;
       }
     }
@@ -136,41 +196,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      if (_tipoUsuario == TipoUsuario.paciente) {
-        await _apiService.registerPaciente(
-          nombre: _nameController.text.trim(),
-          apellido: _apellidoController.text.trim(),
-          email: _emailController.text.trim(),
-          telefono: _telefonoController.text.trim(),
-          password: _passwordController.text,
-          sexo: _sexoSeleccionado!,
-          direccion: _direccionController.text.trim(),
-          fechaNacimiento: _fechaNacimiento!,
-          telefonoEmergencia: _telefonoEmergenciaController.text.trim().isEmpty
-              ? null
-              : _telefonoEmergenciaController.text.trim(),
-        );
+      Map<String, dynamic>? medicoDetalle;
+      Map<String, dynamic>? pacienteDetalle;
+
+      if (_tipoUsuario == TipoUsuarioEnum.paciente) {
+        // Según el backend: CreatePacienteDetailsDto
+        pacienteDetalle = {
+          'sexo': _sexoSeleccionado!,
+          'direccion': _direccionController.text.trim(),
+          'fecha_nacimiento': _fechaNacimiento!.toIso8601String(),
+        };
+
+        if (_telefonoEmergenciaController.text.trim().isNotEmpty) {
+          pacienteDetalle['telefono_emergencia'] = _telefonoEmergenciaController
+              .text
+              .trim();
+        }
       } else {
-        await _apiService.registerMedico(
-          nombre: _nameController.text.trim(),
-          apellido: _apellidoController.text.trim(),
-          email: _emailController.text.trim(),
-          telefono: _telefonoController.text.trim(),
-          password: _passwordController.text,
-          institucionId: _institucionSeleccionada!,
-          especialidadId: _especialidadSeleccionada!,
-          telefonoConsultorio:
-              _telefonoConsultorioController.text.trim().isEmpty
-              ? null
-              : _telefonoConsultorioController.text.trim(),
-          aniosExperiencia: _aniosExperienciaController.text.isEmpty
-              ? null
-              : int.tryParse(_aniosExperienciaController.text),
-          registroMpi: _registroMpiController.text.trim().isEmpty
-              ? null
-              : _registroMpiController.text.trim(),
-        );
+        // Según el backend: CreateMedicoDetailsDto con institución embebida
+        medicoDetalle = {
+          'institucion': {
+            'nombre': _nombreInstitucionController.text.trim(),
+            'tipo_institucion': _tipoInstitucionSeleccionada!,
+          },
+          'especialidad': _especialidadSeleccionada!,
+        };
+
+        if (_telefonoConsultorioController.text.trim().isNotEmpty) {
+          medicoDetalle['telefono_consultorio'] = _telefonoConsultorioController
+              .text
+              .trim();
+        }
+
+        if (_aniosExperienciaController.text.trim().isNotEmpty) {
+          final anios = int.tryParse(_aniosExperienciaController.text.trim());
+          if (anios != null) {
+            medicoDetalle['anios_experiencia'] = anios;
+          }
+        }
+
+        if (_registroMpiController.text.trim().isNotEmpty) {
+          medicoDetalle['registro_mpi'] = _registroMpiController.text.trim();
+        }
       }
+
+      await _apiService.register(
+        tipoUsuario: _tipoUsuario == TipoUsuarioEnum.paciente
+            ? BackendConstants.tipoPaciente
+            : BackendConstants.tipoMedico,
+        nombre: _nameController.text.trim(),
+        apellido: _apellidoController.text.trim(),
+        email: _emailController.text.trim(),
+        run: _runController.text.trim(),
+        telefono: _telefonoController.text.trim().isEmpty
+            ? null
+            : _telefonoController.text.trim(),
+        password: _passwordController.text,
+        medicoDetalle: medicoDetalle,
+        pacienteDetalle: pacienteDetalle,
+      );
 
       if (mounted) {
         showDialog(
@@ -294,9 +378,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -328,13 +420,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: GestureDetector(
                         onTap: () {
                           setState(() {
-                            _tipoUsuario = TipoUsuario.paciente;
+                            _tipoUsuario = TipoUsuarioEnum.paciente;
                           });
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: _tipoUsuario == TipoUsuario.paciente
+                            color: _tipoUsuario == TipoUsuarioEnum.paciente
                                 ? const Color(0xFF2196F3)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
@@ -344,7 +436,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             children: [
                               Icon(
                                 Icons.person,
-                                color: _tipoUsuario == TipoUsuario.paciente
+                                color: _tipoUsuario == TipoUsuarioEnum.paciente
                                     ? Colors.white
                                     : Colors.grey,
                               ),
@@ -354,7 +446,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: _tipoUsuario == TipoUsuario.paciente
+                                  color:
+                                      _tipoUsuario == TipoUsuarioEnum.paciente
                                       ? Colors.white
                                       : Colors.grey,
                                 ),
@@ -368,13 +461,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: GestureDetector(
                         onTap: () {
                           setState(() {
-                            _tipoUsuario = TipoUsuario.medico;
+                            _tipoUsuario = TipoUsuarioEnum.medico;
                           });
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: _tipoUsuario == TipoUsuario.medico
+                            color: _tipoUsuario == TipoUsuarioEnum.medico
                                 ? const Color(0xFF2196F3)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
@@ -384,7 +477,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             children: [
                               Icon(
                                 Icons.medical_services,
-                                color: _tipoUsuario == TipoUsuario.medico
+                                color: _tipoUsuario == TipoUsuarioEnum.medico
                                     ? Colors.white
                                     : Colors.grey,
                               ),
@@ -394,7 +487,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: _tipoUsuario == TipoUsuario.medico
+                                  color: _tipoUsuario == TipoUsuarioEnum.medico
                                       ? Colors.white
                                       : Colors.grey,
                                 ),
@@ -423,6 +516,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 keyboardType: TextInputType.name,
               ),
               _buildTextField(
+                controller: _runController,
+                label: 'RUN *',
+                hint: '12345678-9',
+                keyboardType: TextInputType.text,
+              ),
+              _buildTextField(
                 controller: _emailController,
                 label: 'Correo electrónico *',
                 hint: 'nombre@email.com',
@@ -430,7 +529,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               _buildTextField(
                 controller: _telefonoController,
-                label: 'Teléfono *',
+                label: 'Teléfono',
                 hint: '+56912345678',
                 keyboardType: TextInputType.phone,
               ),
@@ -472,7 +571,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
 
               // Campos específicos según tipo de usuario
-              if (_tipoUsuario == TipoUsuario.paciente) ...[
+              if (_tipoUsuario == TipoUsuarioEnum.paciente) ...[
                 // Campos de Paciente
                 const Text(
                   'Sexo *',
@@ -509,17 +608,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       vertical: 16,
                     ),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'Masculino',
-                      child: Text('Masculino'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'Femenino',
-                      child: Text('Femenino'),
-                    ),
-                    DropdownMenuItem(value: 'Otro', child: Text('Otro')),
-                  ],
+                  items: BackendConstants.sexos.map((sexo) {
+                    return DropdownMenuItem(value: sexo, child: Text(sexo));
+                  }).toList(),
                   onChanged: (value) {
                     setState(() {
                       _sexoSeleccionado = value;
@@ -581,8 +672,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ] else ...[
                 // Campos de Médico
+                _buildTextField(
+                  controller: _nombreInstitucionController,
+                  label: 'Nombre de Institución *',
+                  hint: 'Hospital Regional de Valdivia',
+                ),
                 const Text(
-                  'Institución *',
+                  'Tipo de Institución *',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -591,9 +687,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _institucionSeleccionada,
+                  value: _tipoInstitucionSeleccionada,
                   decoration: InputDecoration(
-                    hintText: 'Selecciona tu institución',
+                    hintText: 'Selecciona el tipo',
                     filled: true,
                     fillColor: Colors.grey[50],
                     border: OutlineInputBorder(
@@ -616,15 +712,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       vertical: 16,
                     ),
                   ),
-                  items: _instituciones.map((inst) {
+                  items: BackendConstants.tiposInstitucion.map((tipo) {
                     return DropdownMenuItem<String>(
-                      value: inst['_id'],
-                      child: Text(inst['nombre'] ?? ''),
+                      value: tipo,
+                      child: Text(tipo),
                     );
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      _institucionSeleccionada = value;
+                      _tipoInstitucionSeleccionada = value;
                     });
                   },
                 ),
@@ -664,10 +760,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       vertical: 16,
                     ),
                   ),
-                  items: _especialidades.map((esp) {
+                  items: BackendConstants.especialidades.map((esp) {
                     return DropdownMenuItem<String>(
-                      value: esp['_id'],
-                      child: Text(esp['nombre'] ?? ''),
+                      value: esp,
+                      child: Text(esp),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -758,72 +854,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Botones
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[600],
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+              // Botón de Registro
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: (_acceptTerms && !_isLoading)
+                      ? _handleRegister
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2196F3),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey[300],
+                    disabledForegroundColor: Colors.grey[500],
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                        ),
-                        child: const Text(
-                          'Volver',
+                        )
+                      : const Text(
+                          'Registrarse',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: (_acceptTerms && !_isLoading)
-                            ? _handleRegister
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2196F3),
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey[300],
-                          disabledForegroundColor: Colors.grey[500],
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'Registrarse',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 24),
             ],
