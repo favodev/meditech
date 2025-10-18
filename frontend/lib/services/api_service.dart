@@ -176,6 +176,63 @@ class ApiService {
     }
   }
 
+  // Crear informe con archivos
+  Future<Map<String, dynamic>> createInforme({
+    required String titulo,
+    required String tipoInforme,
+    required String runMedico,
+    String? observaciones,
+    List<File>? files,
+    required String token,
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/informe'),
+      );
+
+      // Agregar headers con token JWT
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Agregar los archivos
+      if (files != null && files.isNotEmpty) {
+        for (var file in files) {
+          final fileExtension = file.path.split('.').last.toLowerCase();
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'files', // Nombre del campo según el backend
+              file.path,
+              contentType: MediaType('application', fileExtension),
+            ),
+          );
+        }
+      }
+
+      // Agregar los datos del informe como JSON
+      final informeData = {
+        'titulo': titulo,
+        'tipo_informe': tipoInforme,
+        'run_medico': runMedico,
+        if (observaciones != null && observaciones.isNotEmpty)
+          'observaciones': observaciones,
+      };
+
+      request.fields['data'] = jsonEncode(informeData);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al crear informe');
+      }
+    } catch (e) {
+      throw Exception('Error al crear informe: $e');
+    }
+  }
+
   // Logout
   Future<void> logout(String token) async {
     try {
