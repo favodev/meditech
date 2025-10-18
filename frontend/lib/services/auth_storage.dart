@@ -15,14 +15,60 @@ class AuthStorage {
     await prefs.setString(_refreshTokenKey, user.refreshToken);
   }
 
-  // Obtener usuario
+  // Obtener usuario (siempre extrae el RUN del token)
   Future<UserModel?> getUser() async {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString(_userKey);
-    if (userJson != null) {
-      return UserModel.fromJson(jsonDecode(userJson));
+    final accessToken = prefs.getString(_tokenKey);
+    final refreshToken = prefs.getString(_refreshTokenKey);
+
+    if (userJson == null || accessToken == null || refreshToken == null) {
+      return null;
     }
-    return null;
+
+    final userData = jsonDecode(userJson) as Map<String, dynamic>;
+
+    // Asegurarse de que los tokens estén en los datos para forzar la decodificación del JWT
+    final completeData = <String, dynamic>{
+      ...userData,
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+    };
+
+    return UserModel.fromJson(completeData);
+  }
+
+  // Recargar usuario desde el token (útil si el modelo cambió)
+  Future<UserModel?> reloadUserFromToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accessToken = prefs.getString(_tokenKey);
+    final refreshToken = prefs.getString(_refreshTokenKey);
+
+    if (accessToken == null || refreshToken == null) {
+      return null;
+    }
+
+    // Obtener datos básicos del usuario guardado
+    final userJson = prefs.getString(_userKey);
+    if (userJson == null) {
+      return null;
+    }
+
+    final userData = jsonDecode(userJson) as Map<String, dynamic>;
+
+    // Recrear el usuario con los tokens actuales para forzar la decodificación del JWT
+    final refreshedData = <String, dynamic>{
+      ...userData,
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+    };
+
+    final user = UserModel.fromJson(refreshedData);
+
+    // Guardar el usuario actualizado
+    await saveUser(user);
+
+    return user;
   }
 
   // Obtener token

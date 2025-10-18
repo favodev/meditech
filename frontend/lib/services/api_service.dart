@@ -197,17 +197,32 @@ class ApiService {
       // Agregar headers con token JWT
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Agregar los archivos
+      // Agregar los datos del informe como JSON en el campo 'data'
+      final informeData = {
+        'titulo': titulo,
+        'tipo_informe': tipoInforme,
+        'run_medico': runMedico,
+        if (observaciones != null && observaciones.isNotEmpty)
+          'observaciones': observaciones,
+      };
+
+      request.fields['data'] = jsonEncode(informeData);
+
+      debugPrint('📋 Datos del informe: $informeData');
+      debugPrint('📋 JSON enviado: ${jsonEncode(informeData)}');
+
+      // Agregar los archivos con el nombre 'files' (plural)
       if (files != null && files.isNotEmpty) {
         debugPrint('📎 Agregando archivos al request:');
         for (var file in files) {
           final fileExtension = file.path.split('.').last.toLowerCase();
-          final fileName = file.path.split('/').last;
+          final fileName = file.path.split(Platform.pathSeparator).last;
 
           debugPrint('  - Archivo: $fileName');
           debugPrint('    Path: ${file.path}');
           debugPrint('    Existe: ${await file.exists()}');
           debugPrint('    Tamaño: ${await file.length()} bytes');
+          debugPrint('    Extensión: $fileExtension');
 
           // Determinar el Content-Type correcto según la extensión
           MediaType contentType;
@@ -235,11 +250,13 @@ class ApiService {
               contentType = MediaType('application', 'octet-stream');
           }
 
+          // IMPORTANTE: El backend espera 'files' como nombre del campo
           request.files.add(
             await http.MultipartFile.fromPath(
-              'files',
+              'files', // ← Este nombre debe coincidir con el backend
               file.path,
               contentType: contentType,
+              filename: fileName, // ← Agregar filename explícitamente
             ),
           );
         }
@@ -248,19 +265,10 @@ class ApiService {
         debugPrint('⚠️ No hay archivos para subir');
       }
 
-      // Agregar los datos del informe como JSON
-      final informeData = {
-        'titulo': titulo,
-        'tipo_informe': tipoInforme,
-        'run_medico': runMedico,
-        if (observaciones != null && observaciones.isNotEmpty)
-          'observaciones': observaciones,
-      };
-
-      request.fields['data'] = jsonEncode(informeData);
-
-      debugPrint('📋 Datos del informe: $informeData');
       debugPrint('📡 Enviando request a: ${request.url}');
+      debugPrint('📡 Headers: ${request.headers}');
+      debugPrint('� Fields: ${request.fields}');
+      debugPrint('📡 Files: ${request.files.map((f) => f.filename).toList()}');
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -272,6 +280,7 @@ class ApiService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final result = jsonDecode(response.body);
         debugPrint('✅ Informe creado exitosamente');
+        debugPrint('  ID del informe: ${result['_id']}');
         debugPrint(
           '  Archivos en respuesta: ${result['archivos']?.length ?? 0}',
         );
@@ -283,7 +292,7 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('❌ Error al crear informe: $e');
-      throw Exception('Error al crear informe: $e');
+      rethrow;
     }
   }
 

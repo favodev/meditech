@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
+import '../models/tipo_informe.dart';
 
 class InformesScreen extends StatefulWidget {
   const InformesScreen({super.key});
@@ -29,11 +30,18 @@ class _InformesScreenState extends State<InformesScreen> {
   }
 
   Future<void> _loadUserData() async {
+    // Cargar usuario (siempre extrae el RUN del JWT automáticamente)
     final user = await _authStorage.getUser();
     if (user != null) {
       setState(() {
         _currentUser = user;
       });
+      debugPrint('✅ Usuario cargado: ${user.nombre}');
+      debugPrint(
+        '✅ RUN del usuario: ${user.run.isNotEmpty ? user.run : "VACÍO"}',
+      );
+    } else {
+      debugPrint('⚠️ No se pudo cargar el usuario');
     }
   }
 
@@ -47,6 +55,32 @@ class _InformesScreenState extends State<InformesScreen> {
       );
       return;
     }
+
+    // Validar que el usuario tenga RUN
+    if (_currentUser!.run.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              '⚠️ No se encontró tu RUN. Necesitas cerrar sesión y volver a iniciar sesión.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'Ir a Configuración',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.pushNamed(context, '/settings');
+              },
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    debugPrint('👤 Usuario actual: ${_currentUser!.nombre}');
+    debugPrint('👤 RUN del usuario: ${_currentUser!.run}');
 
     try {
       // PRIMERO: Seleccionar archivos
@@ -158,7 +192,8 @@ class _InformesScreenState extends State<InformesScreen> {
     final tituloController = TextEditingController();
     final runMedicoController = TextEditingController();
     final observacionesController = TextEditingController();
-    String tipoInforme = 'Examen';
+    String tipoInforme =
+        TipoInforme.consultaGeneral; // ← Usar constante del enum
 
     return showDialog<Map<String, String>>(
       context: context,
@@ -220,21 +255,14 @@ class _InformesScreenState extends State<InformesScreen> {
                         prefixIcon: Icon(Icons.medical_information),
                       ),
                       initialValue: tipoInforme,
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'Examen',
-                          child: Text('Examen'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Diagnostico',
-                          child: Text('Diagnóstico'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Receta',
-                          child: Text('Receta'),
-                        ),
-                        DropdownMenuItem(value: 'Otro', child: Text('Otro')),
-                      ],
+                      items: TipoInforme.opciones
+                          .map(
+                            (opcion) => DropdownMenuItem(
+                              value: opcion.value,
+                              child: Text(opcion.label),
+                            ),
+                          )
+                          .toList(),
                       onChanged: (value) {
                         if (value != null) {
                           setState(() {
