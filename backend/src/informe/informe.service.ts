@@ -12,6 +12,10 @@ export class InformeService {
     private readonly storageService: StorageService,
   ) {}
 
+  findAll(run: string): Promise<Informe[]> {
+    return this.informeModel.find({ run_paciente: run }).exec();
+  }
+
   async create(
     runPaciente: string,
     createInformeDto: CreateInformeDto,

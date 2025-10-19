@@ -6,6 +6,7 @@ import {
   Request,
   UploadedFiles,
   UseInterceptors,
+  Get,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -18,6 +19,11 @@ import { validate } from 'class-validator';
 @UseGuards(AuthGuard('jwt'))
 export class InformeController {
   constructor(private readonly informeService: InformeService) {}
+
+  @Get()
+  async findAll(@Request() req) {
+    return this.informeService.findAll(req.user.run);
+  }
 
   @Post()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 10 }]))
