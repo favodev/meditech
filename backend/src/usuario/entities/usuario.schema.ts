@@ -47,8 +47,6 @@ export class Usuario extends Document {
   @Prop({ type: String, required: false })
   currentHashedRefreshToken?: string;
 
-  // -- CAMPOS PACIENTE (Opcionales) ---
-
   @Prop({ type: String, enum: Object.values(Sexo), required: false })
   sexo?: string;
 
@@ -61,7 +59,6 @@ export class Usuario extends Document {
   @Prop({ required: false })
   telefono_emergencia?: string;
 
-  // --- CAMPOS DE MÉDICO (Opcionales) ---
   @Prop({ type: InstitucionEmbebidaSchema, required: false })
   institucion?: InstitucionEmbebida;
 

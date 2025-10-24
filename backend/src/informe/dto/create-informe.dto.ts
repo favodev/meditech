@@ -1,11 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsEnum,
-  IsOptional,
-  // Validador para RUN chileno (deberás instalarlo o crearlo)
-  // import { IsRut } from 'your-custom-validator-package';
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 import { TipoInforme } from '../../common/enums/tipo_informe.enum';
 
 export class CreateInformeDto {
@@ -21,8 +14,7 @@ export class CreateInformeDto {
   @IsOptional()
   observaciones?: string;
 
-  // @IsRut() // Descomenta si tienes un validador de RUN
-  @IsString() // Temporalmente como string si no tienes validador
+  @IsString()
   @IsNotEmpty()
-  run_medico: string; // 👈 Campo nuevo: RUN del médico asociado
+  run_medico: string;
 }

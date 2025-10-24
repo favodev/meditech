@@ -2,7 +2,6 @@ import {
   IsString,
   IsOptional,
   IsDate,
-  IsIn,
   IsEnum,
   IsNumber,
   IsObject,
