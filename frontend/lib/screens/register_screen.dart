@@ -227,6 +227,79 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
+  Widget _buildDropdown({
+    required String label,
+    required String? initialValue,
+    required String hint,
+    required List<String> items,
+    required void Function(String?) onChanged,
+    String? Function(String?)? validator,
+    bool isLoading = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: initialValue,
+          isExpanded: true,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            filled: true,
+            fillColor: Colors.grey[50],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+          ),
+          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+          dropdownColor: Colors.white,
+          menuMaxHeight: 300,
+          style: const TextStyle(fontSize: 15, color: Colors.black87),
+          items: items
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item, overflow: TextOverflow.ellipsis),
+                ),
+              )
+              .toList(),
+          onChanged: isLoading ? null : onChanged,
+          validator: validator,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -295,39 +368,35 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: RadioListTile<String>(
-                                    title: const Text('Paciente'),
-                                    value: 'Paciente',
-                                    groupValue: _tipoUsuario,
-                                    activeColor: const Color(0xFF2196F3),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _tipoUsuario = value!;
-                                      });
-                                    },
-                                    contentPadding: EdgeInsets.zero,
-                                    visualDensity: VisualDensity.compact,
+                            RadioGroup<String>(
+                              groupValue: _tipoUsuario,
+                              onChanged: (value) {
+                                setState(() {
+                                  _tipoUsuario = value!;
+                                });
+                              },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: RadioListTile<String>(
+                                      title: const Text('Paciente'),
+                                      value: 'Paciente',
+                                      activeColor: const Color(0xFF2196F3),
+                                      contentPadding: EdgeInsets.zero,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: RadioListTile<String>(
-                                    title: const Text('Médico'),
-                                    value: 'Medico',
-                                    groupValue: _tipoUsuario,
-                                    activeColor: const Color(0xFF2196F3),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _tipoUsuario = value!;
-                                      });
-                                    },
-                                    contentPadding: EdgeInsets.zero,
-                                    visualDensity: VisualDensity.compact,
+                                  Expanded(
+                                    child: RadioListTile<String>(
+                                      title: const Text('Médico'),
+                                      value: 'Medico',
+                                      activeColor: const Color(0xFF2196F3),
+                                      contentPadding: EdgeInsets.zero,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -417,70 +486,22 @@ class _RegisterScreenState extends State<RegisterScreen>
                         // ========== CAMPOS ESPECÍFICOS PACIENTE ==========
                         if (_tipoUsuario == 'Paciente') ...[
                           // Sexo
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Sexo *',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: _sexo,
-                                decoration: InputDecoration(
-                                  hintText: 'Selecciona tu sexo',
-                                  hintStyle: TextStyle(color: Colors.grey[400]),
-                                  filled: true,
-                                  fillColor: Colors.grey[50],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF2196F3),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
-                                  ),
-                                ),
-                                items: ['Masculino', 'Femenino', 'Otro']
-                                    .map(
-                                      (sexo) => DropdownMenuItem(
-                                        value: sexo,
-                                        child: Text(sexo),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _sexo = value;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Selecciona tu sexo';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ],
+                          _buildDropdown(
+                            label: 'Sexo *',
+                            initialValue: _sexo,
+                            hint: 'Selecciona tu sexo',
+                            items: ['Masculino', 'Femenino', 'Otro'],
+                            onChanged: (value) {
+                              setState(() {
+                                _sexo = value;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Selecciona tu sexo';
+                              }
+                              return null;
+                            },
                           ),
 
                           const SizedBox(height: 20),
@@ -614,7 +635,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
-                                value: _institucionSeleccionada,
+                                initialValue: _institucionSeleccionada,
+                                isExpanded: true,
                                 decoration: InputDecoration(
                                   hintText: _loadingInstituciones
                                       ? 'Cargando instituciones...'
@@ -641,10 +663,34 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       width: 2,
                                     ),
                                   ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                      width: 2,
+                                    ),
+                                  ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 16,
                                   ),
+                                ),
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.grey[600],
+                                ),
+                                dropdownColor: Colors.white,
+                                menuMaxHeight: 300,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black87,
                                 ),
                                 items: _instituciones
                                     .map(
@@ -652,6 +698,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         value: inst['_id'],
                                         child: Text(
                                           '${inst['nombre']} (${inst['tipo_institucion']})',
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     )
@@ -689,7 +736,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
-                                value: _especialidad,
+                                initialValue: _especialidad,
+                                isExpanded: true,
                                 decoration: InputDecoration(
                                   hintText: 'Selecciona tu especialidad',
                                   hintStyle: TextStyle(color: Colors.grey[400]),
@@ -714,10 +762,34 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       width: 2,
                                     ),
                                   ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.red,
+                                      width: 2,
+                                    ),
+                                  ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 16,
                                   ),
+                                ),
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.grey[600],
+                                ),
+                                dropdownColor: Colors.white,
+                                menuMaxHeight: 300,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black87,
                                 ),
                                 items:
                                     [
@@ -767,9 +839,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           'Otra',
                                         ]
                                         .map(
-                                          (esp) => DropdownMenuItem(
+                                          (esp) => DropdownMenuItem<String>(
                                             value: esp,
-                                            child: Text(esp),
+                                            child: Text(
+                                              esp,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         )
                                         .toList(),
