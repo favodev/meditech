@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.81:3000';
+  static const String baseUrl = 'http://192.168.1.83:3000';
 
   // Login - según el backend retorna: { usuario: {...}, accessToken, refreshToken }
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -344,6 +344,26 @@ class ApiService {
     }
   }
 
+  // Refresh token
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/refresh'),
+        headers: {'Authorization': 'Bearer $refreshToken'},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Error al renovar token');
+      }
+    } catch (e) {
+      throw Exception('Error al renovar token: $e');
+    }
+  }
+
+  // ===== GESTIÓN DE PERFIL =====
+
   // Obtener perfil del usuario autenticado
   Future<Map<String, dynamic>> getMyProfile(String token) async {
     try {
@@ -357,12 +377,16 @@ class ApiService {
         },
       );
 
+      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('  Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         debugPrint('✅ Perfil obtenido exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body);
+        debugPrint('❌ Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al obtener perfil');
       }
     } catch (e) {
@@ -378,7 +402,7 @@ class ApiService {
   ) async {
     try {
       debugPrint('📤 Actualizando perfil del usuario...');
-      debugPrint('  Datos a actualizar: $updates');
+      debugPrint('  Datos: $updates');
 
       final response = await http.patch(
         Uri.parse('$baseUrl/usuario/me'),
@@ -389,12 +413,16 @@ class ApiService {
         body: jsonEncode(updates),
       );
 
+      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('  Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         debugPrint('✅ Perfil actualizado exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body);
+        debugPrint('❌ Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al actualizar perfil');
       }
     } catch (e) {
@@ -424,12 +452,16 @@ class ApiService {
         }),
       );
 
+      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('  Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         debugPrint('✅ Contraseña cambiada exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body);
+        debugPrint('❌ Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al cambiar contraseña');
       }
     } catch (e) {
@@ -437,6 +469,8 @@ class ApiService {
       rethrow;
     }
   }
+
+  // ===== INSTITUCIONES =====
 
   // Obtener todas las instituciones
   Future<List<Map<String, dynamic>>> getInstituciones() async {
@@ -462,21 +496,22 @@ class ApiService {
     }
   }
 
-  // Refresh token
-  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+  // Obtener una institución por ID
+  Future<Map<String, dynamic>> getInstitucion(String id) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/refresh'),
-        headers: {'Authorization': 'Bearer $refreshToken'},
+        Uri.parse('$baseUrl/institucion/$id'),
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Error al renovar token');
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al obtener institución');
       }
     } catch (e) {
-      throw Exception('Error al renovar token: $e');
+      rethrow;
     }
   }
 }

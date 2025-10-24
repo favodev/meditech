@@ -3,6 +3,8 @@ import 'screens/splash_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/change_password_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,20 +22,18 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       initialRoute: '/',
-      // ✅ Usa onGenerateRoute para transiciones personalizadas
       onGenerateRoute: (settings) {
-        // Mapeo de rutas a widgets
-
         final routes = <String, WidgetBuilder>{
           '/': (context) => const SplashScreen(),
           '/home': (context) => const MainScreen(),
           '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(), // Nueva ruta
+          '/register': (context) => const RegisterScreen(),
+          '/profile': (context) => const ProfileScreen(),
+          '/change-password': (context) => const ChangePasswordScreen(),
         };
 
         final builder = routes[settings.name];
         if (builder != null) {
-          // ✅ Transición personalizada para TODAS las rutas
           return PageRouteBuilder(
             settings: settings,
             pageBuilder: (context, animation, secondaryAnimation) =>

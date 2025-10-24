@@ -25,61 +25,17 @@ class ConfiguracionScreen extends StatelessWidget {
             subtitle: const Text('Ver y editar tu información'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Funcionalidad próximamente')),
-              );
+              Navigator.pushNamed(context, '/profile');
             },
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.notifications, color: Color(0xFF2196F3)),
-            title: const Text('Notificaciones'),
-            subtitle: const Text('Configura tus alertas'),
+            leading: const Icon(Icons.lock, color: Color(0xFF2196F3)),
+            title: const Text('Cambiar Contraseña'),
+            subtitle: const Text('Actualiza tu contraseña'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Funcionalidad próximamente')),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.security, color: Color(0xFF2196F3)),
-            title: const Text('Privacidad y Seguridad'),
-            subtitle: const Text('Gestiona tu privacidad'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Funcionalidad próximamente')),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.help, color: Color(0xFF2196F3)),
-            title: const Text('Ayuda y Soporte'),
-            subtitle: const Text('¿Necesitas ayuda?'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Funcionalidad próximamente')),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.info, color: Color(0xFF2196F3)),
-            title: const Text('Acerca de'),
-            subtitle: const Text('Versión 1.0.0'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              showAboutDialog(
-                context: context,
-                applicationName: 'MediTech',
-                applicationVersion: '1.0.0',
-                applicationIcon: const Icon(Icons.medical_services, size: 48),
-                children: [const Text('Aplicación de gestión de salud')],
-              );
+              Navigator.pushNamed(context, '/change-password');
             },
           ),
           const Divider(),
