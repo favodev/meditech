@@ -2,23 +2,21 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { TipoInforme } from '../../common/enums/tipo_informe.enum';
 
-// --- SUB-DOCUMENTO PARA LOS ARCHIVOS ANIDADOS ---
-@Schema({ _id: false }) // _id: false para que no genere IDs para cada archivo
-class Archivo {
+@Schema({ _id: false })
+export class Archivo {
   @Prop({ required: true })
-  nombre: string; // El nombre original del archivo para mostrar al usuario
+  nombre: string;
 
   @Prop({ required: true })
-  formato: string; // El tipo MIME del archivo, ej: 'application/pdf'
+  formato: string;
 
   @Prop({ required: true })
-  urlpath: string; // La ruta/path del archivo en Cloud Storage
+  urlpath: string;
 }
 
-const ArchivoSchema = SchemaFactory.createForClass(Archivo);
+export const ArchivoSchema = SchemaFactory.createForClass(Archivo);
 
-// --- ESQUEMA PRINCIPAL DEL INFORME ---
-@Schema({ timestamps: true }) // timestamps: true añade createdAt y updatedAt
+@Schema({ timestamps: true })
 export class Informe extends Document {
   @Prop({ required: true })
   titulo: string;

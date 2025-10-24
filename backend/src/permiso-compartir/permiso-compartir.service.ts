@@ -1,26 +1,49 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { PermisoCompartir } from './entities/permiso-compartir.schema';
+import { Informe } from '../informe/entities/informe.schema';
 import { CreatePermisoCompartirDto } from './dto/create-permiso-compartir.dto';
-import { UpdatePermisoCompartirDto } from './dto/update-permiso-compartir.dto';
 
 @Injectable()
 export class PermisoCompartirService {
-  create(createPermisoCompartirDto: CreatePermisoCompartirDto) {
-    return 'This action adds a new permisoCompartir';
-  }
+  constructor(
+    @InjectModel(PermisoCompartir.name)
+    private permisoModel: Model<PermisoCompartir>,
 
-  findAll() {
-    return `This action returns all permisoCompartir`;
-  }
+    @InjectModel(Informe.name) private informeModel: Model<Informe>,
+  ) {}
 
-  findOne(id: number) {
-    return `This action returns a #${id} permisoCompartir`;
-  }
+  async create(
+    runPaciente: string,
+    dto: CreatePermisoCompartirDto,
+  ): Promise<PermisoCompartir> {
+    const informeOriginal = await this.informeModel
+      .findById(dto.informe_id_original)
+      .exec();
 
-  update(id: number, updatePermisoCompartirDto: UpdatePermisoCompartirDto) {
-    return `This action updates a #${id} permisoCompartir`;
-  }
+    if (!informeOriginal) {
+      throw new NotFoundException(
+        `Informe con ID ${dto.informe_id_original} no encontrado.`,
+      );
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} permisoCompartir`;
+    const informeEmbebido = {
+      titulo: informeOriginal.titulo,
+      tipo_informe: informeOriginal.tipo_informe,
+      observaciones: informeOriginal.observaciones,
+      archivos: dto.archivos ?? informeOriginal.archivos,
+    };
+
+    const nuevoPermiso = new this.permisoModel({
+      nivel_acceso: dto.nivel_acceso,
+      fecha_limite: dto.fecha_limite,
+      run_paciente: runPaciente,
+      run_medico: dto.run_medico,
+      informe_id_original: dto.informe_id_original,
+      informe: informeEmbebido,
+    });
+
+    return nuevoPermiso.save();
   }
 }
