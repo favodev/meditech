@@ -18,38 +18,33 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Configurar el controlador de animación
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
-    // Animación de fade (opacidad)
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
       ),
     );
 
-    // Animación de escala (pequeño bounce)
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.7, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
       ),
     );
 
-    // Iniciar la animación
     _controller.forward();
 
-    // Navegar a la pantalla principal después de 2.5 segundos
-    Timer(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        // ✅ Simple: usa la ruta nombrada
-        // La transición se maneja en main.dart con onGenerateRoute
-        Navigator.of(context).pushReplacementNamed('/login');
-      }
+    Timer(const Duration(milliseconds: 2000), () {
+      _controller.reverse().then((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/login');
+        }
+      });
     });
   }
 
@@ -71,27 +66,15 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo con animación
-                Image.asset('assets/logoapp.png', width: 180, height: 180),
-                const SizedBox(height: 24),
-                // Nombre de la app
+                Image.asset('assets/logoapp.png', width: 200, height: 200),
+                const SizedBox(height: 32),
                 const Text(
                   'MediTech',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 40,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2196F3),
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Subtítulo
-                const Text(
-                  'Tu salud en tus manos',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                    letterSpacing: 2.0,
                   ),
                 ),
               ],
