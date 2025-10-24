@@ -20,6 +20,7 @@ class _InformesScreenState extends State<InformesScreen> {
   final AuthStorage _authStorage = AuthStorage();
 
   bool _isUploading = false;
+  bool _isLoading = true;
   final List<Informe> _informes = [];
   UserModel? _currentUser;
 
@@ -27,6 +28,7 @@ class _InformesScreenState extends State<InformesScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _loadInformes();
   }
 
   Future<void> _loadUserData() async {
@@ -42,6 +44,50 @@ class _InformesScreenState extends State<InformesScreen> {
       );
     } else {
       debugPrint('⚠️ No se pudo cargar el usuario');
+    }
+  }
+
+  Future<void> _loadInformes() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final token = await _authStorage.getToken();
+      if (token == null) {
+        throw Exception('No hay sesión activa');
+      }
+
+      debugPrint('🔄 Cargando informes del usuario...');
+      final informesData = await _apiService.getInformes(token);
+
+      debugPrint('✅ Informes recibidos: ${informesData.length}');
+
+      final informes = informesData
+          .map((data) => Informe.fromJson(data))
+          .toList();
+
+      setState(() {
+        _informes.clear();
+        _informes.addAll(informes);
+        _isLoading = false;
+      });
+
+      debugPrint('✅ Informes cargados en la UI: ${_informes.length}');
+    } catch (e) {
+      debugPrint('❌ Error al cargar informes: $e');
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar informes: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -155,7 +201,6 @@ class _InformesScreenState extends State<InformesScreen> {
       debugPrint('  Archivos guardados: ${nuevoInforme.archivos.length}');
 
       setState(() {
-        _informes.add(nuevoInforme);
         _isUploading = false;
       });
 
@@ -169,6 +214,9 @@ class _InformesScreenState extends State<InformesScreen> {
           ),
         );
       }
+
+      // Recargar la lista de informes desde el servidor
+      await _loadInformes();
     } catch (e) {
       setState(() {
         _isUploading = false;
@@ -559,8 +607,26 @@ class _InformesScreenState extends State<InformesScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _isLoading ? null : _loadInformes,
+            tooltip: 'Recargar informes',
+          ),
+        ],
       ),
-      body: _informes.isEmpty && !_isUploading
+      body: _isLoading
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Cargando informes...'),
+                ],
+              ),
+            )
+          : _informes.isEmpty && !_isUploading
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

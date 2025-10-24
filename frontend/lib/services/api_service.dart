@@ -312,6 +312,156 @@ class ApiService {
     }
   }
 
+  // Obtener informes del usuario autenticado
+  Future<List<Map<String, dynamic>>> getInformes(String token) async {
+    try {
+      debugPrint('📥 Obteniendo informes del usuario...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/informe'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('  Status: ${response.statusCode}');
+      debugPrint('  Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        debugPrint('✅ Informes obtenidos: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        final error = jsonDecode(response.body);
+        debugPrint('❌ Error del servidor: $error');
+        throw Exception(error['message'] ?? 'Error al obtener informes');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener informes: $e');
+      rethrow;
+    }
+  }
+
+  // Obtener perfil del usuario autenticado
+  Future<Map<String, dynamic>> getMyProfile(String token) async {
+    try {
+      debugPrint('📥 Obteniendo perfil del usuario...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/usuario/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Perfil obtenido exitosamente');
+        return data;
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al obtener perfil');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener perfil: $e');
+      rethrow;
+    }
+  }
+
+  // Actualizar perfil del usuario autenticado
+  Future<Map<String, dynamic>> updateMyProfile(
+    String token,
+    Map<String, dynamic> updates,
+  ) async {
+    try {
+      debugPrint('📤 Actualizando perfil del usuario...');
+      debugPrint('  Datos a actualizar: $updates');
+
+      final response = await http.patch(
+        Uri.parse('$baseUrl/usuario/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(updates),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Perfil actualizado exitosamente');
+        return data;
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al actualizar perfil');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al actualizar perfil: $e');
+      rethrow;
+    }
+  }
+
+  // Cambiar contraseña
+  Future<Map<String, dynamic>> changePassword(
+    String token,
+    String currentPassword,
+    String newPassword,
+  ) async {
+    try {
+      debugPrint('📤 Cambiando contraseña...');
+
+      final response = await http.patch(
+        Uri.parse('$baseUrl/change-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Contraseña cambiada exitosamente');
+        return data;
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al cambiar contraseña');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al cambiar contraseña: $e');
+      rethrow;
+    }
+  }
+
+  // Obtener todas las instituciones
+  Future<List<Map<String, dynamic>>> getInstituciones() async {
+    try {
+      debugPrint('📥 Obteniendo instituciones...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/institucion'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        debugPrint('✅ Instituciones obtenidas: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al obtener instituciones');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener instituciones: $e');
+      rethrow;
+    }
+  }
+
   // Refresh token
   Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
     try {
