@@ -1,91 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
-enum TipoUsuarioEnum { medico, paciente }
-
-// Constantes del backend
-class BackendConstants {
-  static const String tipoMedico = 'Medico';
-  static const String tipoPaciente = 'Paciente';
-  static const List<String> sexos = ['Masculino', 'Femenino', 'Otro'];
-  static const List<String> tiposInstitucion = [
-    'Hospital Publico',
-    'CESFAM',
-    'CECOSF',
-    'Posta Rural',
-    'SAPU',
-    'SAR',
-    'COSAM',
-    'CDT',
-    'CRS',
-    'Consultorio de Especialidades',
-    'Clinica',
-    'Consultorio Privado',
-    'Centro Medico',
-    'Laboratorio',
-    'Banco de Sangre',
-    'Centro de Imagenologia',
-    'Farmacia',
-    'Hogar de Ancianos',
-    'Instituto de Salud Publica',
-    'Instituciones Fuerzas Armadas',
-    'Mutuo de Seguridad',
-    'Central de Abastecimiento',
-  ];
-  static const List<String> especialidades = [
-    'Cardiologia',
-    'Dermatologia',
-    'Pediatria',
-    'Oftalmologia',
-    'Neurologia',
-    'Traumatologia',
-    'Gastroenterologia',
-    'Neumologia',
-    'Endocrinologia',
-    'Nefrologia',
-    'Otorrinolaringologia',
-    'Psiquiatria',
-    'Urologia',
-    'Ginecologia',
-    'Anestesiologia',
-    'Radiologia',
-    'Oncologia',
-    'Hematologia',
-    'Reumatologia',
-    'Medicina Interna',
-    'Medicina Familiar',
-    'Medicina de Urgencias',
-    'Alergologia',
-    'Medicina Fisica y Rehabilitacion',
-    'Cirugia General',
-    'Cirugia Plastica',
-    'Cirugia Cardiovascular',
-    'Cirugia Pediatrica',
-    'Medicina de Cuidados Paliativos',
-    'Geriatria',
-    'Infectologia',
-    'Patologia',
-    'Medicina del Deporte',
-    'Medicina Nuclear',
-    'Genetica Medica',
-    'Epidemiologia',
-    'Salud Publica',
-    'Medicina del Trabajo',
-    'Fisioterapia',
-    'Nutriologia',
-    'Odontologia',
-    'Psicologia Clinica',
-    'Podologia',
-    'Microbiologia',
-    'Bioquimica Clinica',
-    'Toxicologia',
-    'Farmacologia Clinica',
-    'Inmunologia Clinica',
-    'Angiologia',
-    'Neurocirugia',
-  ];
-}
-
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -93,12 +8,14 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen>
+    with SingleTickerProviderStateMixin {
   final _apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
+  late TabController _tabController;
 
-  // Controllers comunes
-  final _nameController = TextEditingController();
+  // Controllers
+  final _nombreController = TextEditingController();
   final _apellidoController = TextEditingController();
   final _emailController = TextEditingController();
   final _runController = TextEditingController();
@@ -106,182 +23,207 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  // Controllers Paciente
+  // Paciente controllers
   final _direccionController = TextEditingController();
   final _telefonoEmergenciaController = TextEditingController();
-  DateTime? _fechaNacimiento;
-  String? _sexoSeleccionado;
 
-  // Controllers Médico
-  final _nombreInstitucionController = TextEditingController();
-  final _telefonoConsultorioController = TextEditingController();
-  final _aniosExperienciaController = TextEditingController();
-  final _registroMpiController = TextEditingController();
-  String? _tipoInstitucionSeleccionada;
-  String? _especialidadSeleccionada;
-
-  TipoUsuarioEnum _tipoUsuario = TipoUsuarioEnum.paciente;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _acceptTerms = false;
   bool _isLoading = false;
+
+  // Tipo de usuario seleccionado
+  String _tipoUsuario = 'Paciente';
+
+  // Campos específicos
+  String? _sexo;
+  DateTime? _fechaNacimiento;
+  String? _especialidad;
+  String? _institucionSeleccionada; // ID de la institución seleccionada
+
+  // Lista de instituciones del backend
+  List<Map<String, dynamic>> _instituciones = [];
+  bool _loadingInstituciones = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
+    _loadInstituciones();
+  }
+
+  Future<void> _loadInstituciones() async {
+    setState(() => _loadingInstituciones = true);
+    try {
+      final instituciones = await _apiService.getInstituciones();
+      setState(() {
+        _instituciones = instituciones;
+      });
+    } catch (e) {
+      debugPrint('Error cargando instituciones: $e');
+    } finally {
+      setState(() => _loadingInstituciones = false);
+    }
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _nombreController.dispose();
     _apellidoController.dispose();
     _emailController.dispose();
     _runController.dispose();
     _telefonoController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _direccionController.dispose();
-    _telefonoEmergenciaController.dispose();
-    _nombreInstitucionController.dispose();
-    _telefonoConsultorioController.dispose();
-    _aniosExperienciaController.dispose();
-    _registroMpiController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
   Future<void> _handleRegister() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showErrorDialog('Las contraseñas no coinciden');
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (!_acceptTerms) {
-      _showErrorDialog('Debes aceptar los términos y condiciones');
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Las contraseñas no coinciden'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      Map<String, dynamic>? medicoDetalle;
       Map<String, dynamic>? pacienteDetalle;
+      Map<String, dynamic>? medicoDetalle;
 
-      if (_tipoUsuario == TipoUsuarioEnum.paciente) {
+      // Construir objeto específico según tipo de usuario
+      if (_tipoUsuario == 'Paciente') {
         pacienteDetalle = {
-          'sexo': _sexoSeleccionado!,
+          'sexo': _sexo,
           'direccion': _direccionController.text.trim(),
-          'fecha_nacimiento': _fechaNacimiento!.toIso8601String(),
+          'fecha_nacimiento': _fechaNacimiento?.toIso8601String(),
         };
-        if (_telefonoEmergenciaController.text.isNotEmpty) {
+
+        // Añadir teléfono de emergencia si no está vacío
+        if (_telefonoEmergenciaController.text.trim().isNotEmpty) {
           pacienteDetalle['telefono_emergencia'] = _telefonoEmergenciaController
               .text
               .trim();
         }
-      } else {
+      } else if (_tipoUsuario == 'Medico') {
+        // Buscar la institución seleccionada
+        final institucionData = _instituciones.firstWhere(
+          (inst) => inst['_id'] == _institucionSeleccionada,
+        );
+
         medicoDetalle = {
           'institucion': {
-            'nombre': _nombreInstitucionController.text.trim(),
-            'tipo_institucion': _tipoInstitucionSeleccionada!,
+            'nombre': institucionData['nombre'],
+            'tipo_institucion': institucionData['tipo_institucion'],
           },
-          'especialidad': _especialidadSeleccionada!,
+          'especialidad': _especialidad,
         };
-        if (_telefonoConsultorioController.text.isNotEmpty) {
-          medicoDetalle['telefono_consultorio'] = _telefonoConsultorioController
-              .text
-              .trim();
-        }
-        if (_aniosExperienciaController.text.isNotEmpty) {
-          medicoDetalle['anios_experiencia'] = int.tryParse(
-            _aniosExperienciaController.text,
-          );
-        }
-        if (_registroMpiController.text.isNotEmpty) {
-          medicoDetalle['registro_mpi'] = _registroMpiController.text.trim();
-        }
       }
 
       await _apiService.register(
-        tipoUsuario: _tipoUsuario == TipoUsuarioEnum.paciente
-            ? BackendConstants.tipoPaciente
-            : BackendConstants.tipoMedico,
-        nombre: _nameController.text.trim(),
+        tipoUsuario: _tipoUsuario,
+        nombre: _nombreController.text.trim(),
         apellido: _apellidoController.text.trim(),
         email: _emailController.text.trim(),
         run: _runController.text.trim(),
-        telefono: _telefonoController.text.isEmpty
-            ? null
-            : _telefonoController.text.trim(),
+        telefono: _telefonoController.text.trim(),
         password: _passwordController.text,
-        medicoDetalle: medicoDetalle,
         pacienteDetalle: pacienteDetalle,
+        medicoDetalle: medicoDetalle,
       );
 
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('¡Registro exitoso!'),
-            content: const Text(
-              'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registro exitoso. Ahora puedes iniciar sesión'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      if (mounted) _showErrorDialog('Error: ${e.toString()}');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTextField({
-    required TextEditingController controller,
     required String label,
+    required TextEditingController controller,
+    required String hint,
     TextInputType? keyboardType,
     bool obscureText = false,
     Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      validator: validator ?? (v) => v!.isEmpty ? 'Campo requerido' : null,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          validator: validator,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            filled: true,
+            fillColor: Colors.grey[50],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            suffixIcon: suffixIcon,
+          ),
         ),
-        suffixIcon: suffixIcon,
-      ),
+      ],
     );
   }
 
@@ -289,409 +231,672 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Crear Cuenta',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        child: Column(
+          children: [
+            // Tabs fijos en la parte superior
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[200]!, width: 1),
                 ),
-                const SizedBox(height: 24),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                labelColor: const Color(0xFF2196F3),
+                unselectedLabelColor: Colors.grey[400],
+                labelStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+                indicatorColor: const Color(0xFF2196F3),
+                indicatorWeight: 3,
+                onTap: (index) {
+                  if (index == 0) {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  }
+                },
+                tabs: const [
+                  Tab(text: 'Iniciar sesión'),
+                  Tab(text: 'Registro'),
+                ],
+              ),
+            ),
 
-                // Tipo de Usuario con Radio Buttons
-                const Text(
-                  'Tipo de usuario',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(
-                          () => _tipoUsuario = TipoUsuarioEnum.paciente,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: _tipoUsuario == TipoUsuarioEnum.paciente
-                                  ? const Color(0xFF2196F3)
-                                  : Colors.grey[300]!,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                            color: _tipoUsuario == TipoUsuarioEnum.paciente
-                                ? const Color(0xFF2196F3).withValues(alpha: 0.1)
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _tipoUsuario == TipoUsuarioEnum.paciente
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_unchecked,
-                                color: _tipoUsuario == TipoUsuarioEnum.paciente
-                                    ? const Color(0xFF2196F3)
-                                    : Colors.grey,
+            // Contenido con scroll
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 20),
+
+                        // Selector de tipo de usuario
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Tipo de Usuario',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
-                              const SizedBox(width: 8),
-                              const Text('Paciente'),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(
-                          () => _tipoUsuario = TipoUsuarioEnum.medico,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: _tipoUsuario == TipoUsuarioEnum.medico
-                                  ? const Color(0xFF2196F3)
-                                  : Colors.grey[300]!,
-                              width: 2,
                             ),
-                            borderRadius: BorderRadius.circular(8),
-                            color: _tipoUsuario == TipoUsuarioEnum.medico
-                                ? const Color(0xFF2196F3).withValues(alpha: 0.1)
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _tipoUsuario == TipoUsuarioEnum.medico
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_unchecked,
-                                color: _tipoUsuario == TipoUsuarioEnum.medico
-                                    ? const Color(0xFF2196F3)
-                                    : Colors.grey,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text('Médico'),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Nombre y Apellido en una fila
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _nameController,
-                        label: 'Nombre *',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _apellidoController,
-                        label: 'Apellido *',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // RUN y Teléfono en una fila
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _runController,
-                        label: 'RUN *',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _telefonoController,
-                        label: 'Teléfono',
-                        keyboardType: TextInputType.phone,
-                        validator: (_) => null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                _buildTextField(
-                  controller: _emailController,
-                  label: 'Email *',
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-
-                // Contraseñas en una fila
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _passwordController,
-                        label: 'Contraseña *',
-                        obscureText: _obscurePassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _confirmPasswordController,
-                        label: 'Confirmar *',
-                        obscureText: _obscureConfirmPassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () => setState(
-                            () => _obscureConfirmPassword =
-                                !_obscureConfirmPassword,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Campos específicos
-                if (_tipoUsuario == TipoUsuarioEnum.paciente) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: 'Sexo *',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: RadioListTile<String>(
+                                    title: const Text('Paciente'),
+                                    value: 'Paciente',
+                                    groupValue: _tipoUsuario,
+                                    activeColor: const Color(0xFF2196F3),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _tipoUsuario = value!;
+                                      });
+                                    },
+                                    contentPadding: EdgeInsets.zero,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: RadioListTile<String>(
+                                    title: const Text('Médico'),
+                                    value: 'Medico',
+                                    groupValue: _tipoUsuario,
+                                    activeColor: const Color(0xFF2196F3),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _tipoUsuario = value!;
+                                      });
+                                    },
+                                    contentPadding: EdgeInsets.zero,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          initialValue: _sexoSeleccionado,
-                          items: BackendConstants.sexos
-                              .map(
-                                (s) =>
-                                    DropdownMenuItem(value: s, child: Text(s)),
-                              )
-                              .toList(),
-                          onChanged: (v) =>
-                              setState(() => _sexoSeleccionado = v),
-                          validator: (v) =>
-                              v == null ? 'Campo requerido' : null,
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime(2000),
-                              firstDate: DateTime(1900),
-                              lastDate: DateTime.now(),
-                            );
-                            if (picked != null) {
-                              setState(() => _fechaNacimiento = picked);
+
+                        const SizedBox(height: 24),
+
+                        // Nombre
+                        _buildTextField(
+                          label: 'Nombre',
+                          controller: _nombreController,
+                          hint: 'Juan',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Ingresa tu nombre';
                             }
+                            return null;
                           },
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              labelText: 'Fecha Nacimiento *',
-                              border: OutlineInputBorder(
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Apellido
+                        _buildTextField(
+                          label: 'Apellido',
+                          controller: _apellidoController,
+                          hint: 'Pérez',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Ingresa tu apellido';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Email
+                        _buildTextField(
+                          label: 'Email',
+                          controller: _emailController,
+                          hint: 'ejemplo@correo.com',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Ingresa tu email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Email inválido';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // RUN
+                        _buildTextField(
+                          label: 'RUN',
+                          controller: _runController,
+                          hint: '12345678-9',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Ingresa tu RUN';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Teléfono
+                        _buildTextField(
+                          label: 'Teléfono',
+                          controller: _telefonoController,
+                          hint: '+56912345678',
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Ingresa tu teléfono';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // ========== CAMPOS ESPECÍFICOS PACIENTE ==========
+                        if (_tipoUsuario == 'Paciente') ...[
+                          // Sexo
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Sexo *',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: _sexo,
+                                decoration: InputDecoration(
+                                  hintText: 'Selecciona tu sexo',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF2196F3),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                items: ['Masculino', 'Femenino', 'Otro']
+                                    .map(
+                                      (sexo) => DropdownMenuItem(
+                                        value: sexo,
+                                        child: Text(sexo),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _sexo = value;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Selecciona tu sexo';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Fecha de Nacimiento
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Fecha de Nacimiento *',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  hintText: _fechaNacimiento == null
+                                      ? 'Selecciona tu fecha de nacimiento'
+                                      : '${_fechaNacimiento!.day}/${_fechaNacimiento!.month}/${_fechaNacimiento!.year}',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF2196F3),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                  suffixIcon: Icon(
+                                    Icons.calendar_today,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                                onTap: () async {
+                                  final DateTime? picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now().subtract(
+                                      const Duration(days: 365 * 25),
+                                    ),
+                                    firstDate: DateTime(1900),
+                                    lastDate: DateTime.now(),
+                                    builder: (context, child) {
+                                      return Theme(
+                                        data: Theme.of(context).copyWith(
+                                          colorScheme: const ColorScheme.light(
+                                            primary: Color(0xFF2196F3),
+                                          ),
+                                        ),
+                                        child: child!,
+                                      );
+                                    },
+                                  );
+                                  if (picked != null) {
+                                    setState(() {
+                                      _fechaNacimiento = picked;
+                                    });
+                                  }
+                                },
+                                validator: (value) {
+                                  if (_fechaNacimiento == null) {
+                                    return 'Selecciona tu fecha de nacimiento';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Dirección
+                          _buildTextField(
+                            label: 'Dirección *',
+                            controller: _direccionController,
+                            hint: 'Calle 123, Depto 45',
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Ingresa tu dirección';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Teléfono de Emergencia
+                          _buildTextField(
+                            label: 'Teléfono de Emergencia',
+                            controller: _telefonoEmergenciaController,
+                            hint: '+56912345678',
+                            keyboardType: TextInputType.phone,
+                          ),
+
+                          const SizedBox(height: 20),
+                        ],
+
+                        // ========== CAMPOS ESPECÍFICOS MÉDICO ==========
+                        if (_tipoUsuario == 'Medico') ...[
+                          // Institución
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Institución *',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: _institucionSeleccionada,
+                                decoration: InputDecoration(
+                                  hintText: _loadingInstituciones
+                                      ? 'Cargando instituciones...'
+                                      : 'Selecciona tu institución',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF2196F3),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                items: _instituciones
+                                    .map(
+                                      (inst) => DropdownMenuItem<String>(
+                                        value: inst['_id'],
+                                        child: Text(
+                                          '${inst['nombre']} (${inst['tipo_institucion']})',
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: _loadingInstituciones
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          _institucionSeleccionada = value;
+                                        });
+                                      },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Selecciona tu institución';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Especialidad
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Especialidad *',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: _especialidad,
+                                decoration: InputDecoration(
+                                  hintText: 'Selecciona tu especialidad',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF2196F3),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                items:
+                                    [
+                                          'Cardiologia',
+                                          'Neurologia',
+                                          'Pediatria',
+                                          'Ginecologia',
+                                          'Obstetricia',
+                                          'Traumatologia',
+                                          'Dermatologia',
+                                          'Oftalmologia',
+                                          'Otorrinolaringologia',
+                                          'Psiquiatria',
+                                          'Urologia',
+                                          'Nefrologia',
+                                          'Gastroenterologia',
+                                          'Endocrinologia',
+                                          'Neumologia',
+                                          'Reumatologia',
+                                          'Hematologia',
+                                          'Oncologia',
+                                          'Infectologia',
+                                          'Inmunologia',
+                                          'Geriatria',
+                                          'Medicina Interna',
+                                          'Medicina Familiar',
+                                          'Medicina General',
+                                          'Cirugia General',
+                                          'Cirugia Cardiovascular',
+                                          'Cirugia Plastica',
+                                          'Cirugia Pediatrica',
+                                          'Neurocirugia',
+                                          'Anestesiologia',
+                                          'Radiologia',
+                                          'Medicina Nuclear',
+                                          'Patologia',
+                                          'Medicina Legal',
+                                          'Salud Publica',
+                                          'Medicina del Trabajo',
+                                          'Medicina del Deporte',
+                                          'Medicina de Urgencia',
+                                          'Cuidados Intensivos',
+                                          'Neonatologia',
+                                          'Medicina Fisica y Rehabilitacion',
+                                          'Genetica Medica',
+                                          'Nutricion',
+                                          'Otra',
+                                        ]
+                                        .map(
+                                          (esp) => DropdownMenuItem(
+                                            value: esp,
+                                            child: Text(esp),
+                                          ),
+                                        )
+                                        .toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _especialidad = value;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Selecciona tu especialidad';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Contraseña
+                        _buildTextField(
+                          label: 'Contraseña',
+                          controller: _passwordController,
+                          hint: '••••••••••',
+                          obscureText: _obscurePassword,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Ingresa una contraseña';
+                            }
+                            if (value.length < 6) {
+                              return 'Mínimo 6 caracteres';
+                            }
+                            return null;
+                          },
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: Colors.grey[400],
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Confirmar Contraseña
+                        _buildTextField(
+                          label: 'Confirmar Contraseña',
+                          controller: _confirmPasswordController,
+                          hint: '••••••••••',
+                          obscureText: _obscureConfirmPassword,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Confirma tu contraseña';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Las contraseñas no coinciden';
+                            }
+                            return null;
+                          },
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: Colors.grey[400],
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        // Botón Continue
+                        SizedBox(
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _handleRegister,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2196F3),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                              disabledBackgroundColor: Colors.grey[300],
                             ),
-                            child: Text(
-                              _fechaNacimiento == null
-                                  ? 'Seleccionar'
-                                  : '${_fechaNacimiento!.day}/${_fechaNacimiento!.month}/${_fechaNacimiento!.year}',
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Continuar',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _direccionController,
-                    label: 'Dirección *',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _telefonoEmergenciaController,
-                    label: 'Teléfono Emergencia',
-                    keyboardType: TextInputType.phone,
-                    validator: (_) => null,
-                  ),
-                ] else ...[
-                  _buildTextField(
-                    controller: _nombreInstitucionController,
-                    label: 'Nombre Institución *',
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: 'Tipo Institución *',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          initialValue: _tipoInstitucionSeleccionada,
-                          items: BackendConstants.tiposInstitucion
-                              .map(
-                                (t) =>
-                                    DropdownMenuItem(value: t, child: Text(t)),
-                              )
-                              .toList(),
-                          onChanged: (v) =>
-                              setState(() => _tipoInstitucionSeleccionada = v),
-                          validator: (v) =>
-                              v == null ? 'Campo requerido' : null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: 'Especialidad *',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          initialValue: _especialidadSeleccionada,
-                          items: BackendConstants.especialidades
-                              .map(
-                                (e) =>
-                                    DropdownMenuItem(value: e, child: Text(e)),
-                              )
-                              .toList(),
-                          onChanged: (v) =>
-                              setState(() => _especialidadSeleccionada = v),
-                          validator: (v) =>
-                              v == null ? 'Campo requerido' : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _telefonoConsultorioController,
-                          label: 'Tel. Consultorio',
-                          validator: (_) => null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _aniosExperienciaController,
-                          label: 'Años Experiencia',
-                          keyboardType: TextInputType.number,
-                          validator: (_) => null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _registroMpiController,
-                    label: 'Registro MPI',
-                    validator: (_) => null,
-                  ),
-                ],
 
-                const SizedBox(height: 24),
-
-                // Checkbox términos
-                CheckboxListTile(
-                  title: const Text(
-                    'Acepto términos y condiciones',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  value: _acceptTerms,
-                  onChanged: (v) => setState(() => _acceptTerms = v ?? false),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                  activeColor: const Color(0xFF2196F3),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Botón registrarse
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleRegister,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2196F3),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                        const SizedBox(height: 40),
+                      ],
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          )
-                        : const Text(
-                            'Registrarse',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
