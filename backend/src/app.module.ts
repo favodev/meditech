@@ -4,7 +4,6 @@ import { UsuarioModule } from '@modules/usuario/usuario.module';
 import { InstitucionModule } from '@modules/institucion/institucion.module';
 import { AuthModule } from '@auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
-import { MedicamentoModule } from '@modules/medicamento/medicamento.module';
 import { InformeModule } from '@modules/informe/informe.module';
 import { PermisoCompartirModule } from '@modules/permiso-compartir/permiso-compartir.module';
 import { StorageModule } from '@modules/storage/storage.module';
@@ -18,7 +17,6 @@ import { StorageModule } from '@modules/storage/storage.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MedicamentoModule,
     InformeModule,
     PermisoCompartirModule,
     StorageModule,
