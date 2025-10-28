@@ -7,6 +7,7 @@ import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
 import '../models/tipo_informe.dart';
+import 'compartir_informe_screen.dart';
 
 class InformesScreen extends StatefulWidget {
   const InformesScreen({super.key});
@@ -18,17 +19,111 @@ class InformesScreen extends StatefulWidget {
 class _InformesScreenState extends State<InformesScreen> {
   final ApiService _apiService = ApiService();
   final AuthStorage _authStorage = AuthStorage();
+  final TextEditingController _searchController = TextEditingController();
 
   bool _isUploading = false;
   bool _isLoading = true;
   final List<Informe> _informes = [];
+  List<Informe> _informesFiltrados = [];
   UserModel? _currentUser;
+  String _sortOrder = 'reciente'; // 'reciente', 'antiguo', 'alfabetico'
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadInformes();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterInformes(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _informesFiltrados = List.from(_informes);
+      } else {
+        _informesFiltrados = _informes.where((informe) {
+          return informe.titulo.toLowerCase().contains(query.toLowerCase()) ||
+              informe.tipoInforme.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      }
+      _sortInformes();
+    });
+  }
+
+  void _sortInformes() {
+    if (_sortOrder == 'reciente') {
+      _informesFiltrados.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else if (_sortOrder == 'antiguo') {
+      _informesFiltrados.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    } else if (_sortOrder == 'alfabetico') {
+      _informesFiltrados.sort((a, b) => a.titulo.compareTo(b.titulo));
+    }
+  }
+
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Ordenar por',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.access_time),
+              title: const Text('Más reciente'),
+              trailing: _sortOrder == 'reciente'
+                  ? const Icon(Icons.check, color: Color(0xFF2196F3))
+                  : null,
+              onTap: () {
+                setState(() {
+                  _sortOrder = 'reciente';
+                  _sortInformes();
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Más antiguo'),
+              trailing: _sortOrder == 'antiguo'
+                  ? const Icon(Icons.check, color: Color(0xFF2196F3))
+                  : null,
+              onTap: () {
+                setState(() {
+                  _sortOrder = 'antiguo';
+                  _sortInformes();
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.sort_by_alpha),
+              title: const Text('Alfabético'),
+              trailing: _sortOrder == 'alfabetico'
+                  ? const Icon(Icons.check, color: Color(0xFF2196F3))
+                  : null,
+              onTap: () {
+                setState(() {
+                  _sortOrder = 'alfabetico';
+                  _sortInformes();
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _loadUserData() async {
@@ -70,10 +165,13 @@ class _InformesScreenState extends State<InformesScreen> {
       setState(() {
         _informes.clear();
         _informes.addAll(informes);
+        _informesFiltrados = List.from(_informes);
+        _sortInformes();
         _isLoading = false;
       });
 
       debugPrint('✅ Informes cargados en la UI: ${_informes.length}');
+      debugPrint('✅ Informes filtrados: ${_informesFiltrados.length}');
     } catch (e) {
       debugPrint('❌ Error al cargar informes: $e');
       setState(() {
@@ -507,100 +605,374 @@ class _InformesScreenState extends State<InformesScreen> {
   }
 
   void _showShareDialog(Informe informe) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.share, color: Color(0xFF2196F3)),
-            SizedBox(width: 8),
-            Text('Compartir Informe'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Funcionalidad en desarrollo',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Pronto podrás compartir tus informes con médicos de manera segura mediante:',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 12),
-            _buildFeatureItem('Seleccionar qué archivos compartir'),
-            _buildFeatureItem('Elegir el período de acceso'),
-            _buildFeatureItem('Compartir por correo electrónico'),
-            _buildFeatureItem('Revocar acceso en cualquier momento'),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Color(0xFF2196F3), size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Esta funcionalidad estará disponible próximamente',
-                      style: TextStyle(fontSize: 12, color: Colors.black87),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Entendido'),
-          ),
-        ],
+    // Navegar a la pantalla de compartir
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CompartirInformeScreen(informe: informe.toJson()),
       ),
-    );
-  }
-
-  Widget _buildFeatureItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, color: Colors.green, size: 20),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
-        ],
-      ),
-    );
+    ).then((_) {
+      // Recargar informes cuando vuelva de la pantalla de compartir
+      _loadInformes();
+    });
   }
 
   String _formatDate(DateTime date) {
-    final months = [
-      'Ene',
-      'Feb',
-      'Mar',
-      'Abr',
-      'May',
-      'Jun',
-      'Jul',
-      'Ago',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dic',
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day/$month/$year';
+  }
+
+  IconData _getFileIcon(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        return Icons.image;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  Widget _buildInformeCard(Informe informe) {
+    // Obtener el icono del primer archivo para el preview
+    final previewIcon = informe.archivos.isNotEmpty
+        ? _getFileIcon(informe.archivos.first.nombre)
+        : Icons.description_outlined;
+
+    return GestureDetector(
+      onTap: () => _showInformeDetail(informe),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFE3F2FD),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Preview del archivo
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFBBDEFB),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: Icon(
+                  previewIcon,
+                  size: 60,
+                  color: const Color(0xFF64B5F6),
+                ),
+              ),
+            ),
+            // Información del informe
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatDate(informe.createdAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          informe.titulo,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showInformeDetail(Informe informe) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Contenido
+              Expanded(
+                child: ListView(
+                  controller: controller,
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    // Título
+                    Text(
+                      informe.titulo,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Tipo y fecha
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.medical_information,
+                          size: 18,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          informe.tipoInforme,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Icon(
+                          Icons.calendar_today,
+                          size: 18,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(informe.createdAt),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Médico
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.person, color: Color(0xFF2196F3)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Médico tratante',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                Text(
+                                  'RUN: ${informe.runMedico}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (informe.observaciones != null &&
+                        informe.observaciones!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Observaciones',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Text(
+                          informe.observaciones!,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    // Archivos
+                    Row(
+                      children: [
+                        const Text(
+                          'Archivos',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2196F3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${informe.archivos.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ...informe.archivos.map((archivo) {
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: Icon(
+                            _getFileIcon(archivo.nombre),
+                            color: const Color(0xFF2196F3),
+                            size: 32,
+                          ),
+                          title: Text(
+                            archivo.nombre,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: Text(
+                            archivo.formato.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.download),
+                            color: const Color(0xFF2196F3),
+                            onPressed: () =>
+                                _downloadFile(archivo.urlpath, archivo.nombre),
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 24),
+                    // Botones de acción
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _showShareDialog(informe);
+                            },
+                            icon: const Icon(Icons.share),
+                            label: const Text('Compartir'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF2196F3),
+                              side: const BorderSide(
+                                color: Color(0xFF2196F3),
+                                width: 2,
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _downloadAllFiles(informe);
+                            },
+                            icon: const Icon(Icons.download),
+                            label: const Text('Descargar Todo'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2196F3),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Informes'),
         backgroundColor: const Color(0xFF2196F3),
@@ -609,9 +981,14 @@ class _InformesScreenState extends State<InformesScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showSortOptions,
+            tooltip: 'Ordenar',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _isLoading ? null : _loadInformes,
-            tooltip: 'Recargar informes',
+            tooltip: 'Recargar',
           ),
         ],
       ),
@@ -631,10 +1008,14 @@ class _InformesScreenState extends State<InformesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.file_upload, size: 80, color: Colors.grey[300]),
+                  Icon(
+                    Icons.description_outlined,
+                    size: 100,
+                    color: Colors.grey[300],
+                  ),
                   const SizedBox(height: 24),
                   Text(
-                    'Subir Informes',
+                    'No hay informes',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -643,13 +1024,13 @@ class _InformesScreenState extends State<InformesScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Gestiona tus documentos médicos',
+                    'Crea tu primer informe médico',
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
                     onPressed: _isUploading ? null : _pickAndUploadFile,
-                    icon: const Icon(Icons.upload_file),
+                    icon: const Icon(Icons.add),
                     label: const Text('Crear Informe'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2196F3),
@@ -668,246 +1049,84 @@ class _InformesScreenState extends State<InformesScreen> {
             )
           : Column(
               children: [
+                // Barra de búsqueda
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _filterInformes,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar informes...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                _filterInformes('');
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                // Grid de informes
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _informes.length,
-                    itemBuilder: (context, index) {
-                      final informe = _informes[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ExpansionTile(
-                          leading: CircleAvatar(
-                            backgroundColor: const Color(0xFF2196F3),
-                            child: const Icon(
-                              Icons.folder_open,
-                              color: Colors.white,
-                            ),
-                          ),
-                          title: Text(
-                            informe.titulo,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  child: _informesFiltrados.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.medical_information,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    informe.tipoInforme,
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Icon(
-                                    Icons.attach_file,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${informe.archivos.length} archivo(s)',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
+                              Icon(
+                                Icons.search_off,
+                                size: 80,
+                                color: Colors.grey[300],
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 16),
                               Text(
-                                'Médico: RUN ${informe.runMedico}',
+                                'No se encontraron informes',
                                 style: TextStyle(
+                                  fontSize: 18,
                                   color: Colors.grey[600],
-                                  fontSize: 11,
                                 ),
                               ),
                             ],
                           ),
-                          children: [
-                            // Información del informe
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_today,
-                                        size: 16,
-                                        color: Colors.grey[600],
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Creado: ${_formatDate(informe.createdAt)}',
-                                        style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (informe.observaciones != null &&
-                                      informe.observaciones!.isNotEmpty) ...[
-                                    const SizedBox(height: 12),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Row(
-                                            children: [
-                                              Icon(
-                                                Icons.note,
-                                                size: 16,
-                                                color: Colors.blue,
-                                              ),
-                                              SizedBox(width: 8),
-                                              Text(
-                                                'Observaciones:',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            informe.observaciones!,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                        )
+                      : GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 0.85,
                               ),
-                            ),
-                            const Divider(height: 1),
-                            // Lista de archivos
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.attach_file,
-                                    size: 16,
-                                    color: Colors.grey[700],
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Archivos del informe:',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: Colors.grey[800],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            ...informe.archivos.map((archivo) {
-                              return ListTile(
-                                dense: true,
-                                leading: Icon(
-                                  _getFileIcon(archivo.nombre),
-                                  color: const Color(0xFF2196F3),
-                                ),
-                                title: Text(
-                                  archivo.nombre,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                subtitle: Text(
-                                  archivo.formato,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.download),
-                                  onPressed: () => _downloadFile(
-                                    archivo.urlpath,
-                                    archivo.nombre,
-                                  ),
-                                  color: const Color(0xFF2196F3),
-                                  tooltip: 'Descargar archivo',
-                                ),
-                              );
-                            }),
-                            const Divider(height: 1),
-                            // Botones de acción
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: () => _downloadAllFiles(informe),
-                                    icon: const Icon(Icons.download, size: 18),
-                                    label: const Text('Descargar Todo'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF2196F3),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                    ),
-                                  ),
-                                  OutlinedButton.icon(
-                                    onPressed: () => _showShareDialog(informe),
-                                    icon: const Icon(Icons.share, size: 18),
-                                    label: const Text('Compartir'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF2196F3),
-                                      side: const BorderSide(
-                                        color: Color(0xFF2196F3),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                          itemCount: _informesFiltrados.length,
+                          itemBuilder: (context, index) {
+                            final informe = _informesFiltrados[index];
+                            return _buildInformeCard(informe);
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
                 if (_isUploading)
                   Container(
@@ -933,22 +1152,5 @@ class _InformesScreenState extends State<InformesScreen> {
             )
           : null,
     );
-  }
-
-  IconData _getFileIcon(String fileName) {
-    final extension = fileName.split('.').last.toLowerCase();
-    switch (extension) {
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'doc':
-      case 'docx':
-        return Icons.description;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-        return Icons.image;
-      default:
-        return Icons.insert_drive_file;
-    }
   }
 }

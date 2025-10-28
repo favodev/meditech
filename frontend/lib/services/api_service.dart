@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.83:3000';
+  static const String baseUrl = 'http://192.168.1.84:3000';
 
   // Login - según el backend retorna: { usuario: {...}, accessToken, refreshToken }
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -511,6 +511,64 @@ class ApiService {
         throw Exception(error['message'] ?? 'Error al obtener institución');
       }
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ===== PERMISOS COMPARTIR =====
+
+  // Compartir informe con un médico
+  Future<Map<String, dynamic>> compartirInforme({
+    required String token,
+    required String runMedico,
+    required String informeIdOriginal,
+    required String nivelAcceso,
+    DateTime? fechaLimite,
+    List<Map<String, dynamic>>? archivos,
+  }) async {
+    try {
+      debugPrint('📤 Compartiendo informe...');
+      debugPrint('  RUN Médico: $runMedico');
+      debugPrint('  Informe ID: $informeIdOriginal');
+      debugPrint('  Nivel Acceso: $nivelAcceso');
+
+      final Map<String, dynamic> body = {
+        'run_medico': runMedico,
+        'informe_id_original': informeIdOriginal,
+        'nivel_acceso': nivelAcceso,
+      };
+
+      if (fechaLimite != null) {
+        body['fecha_limite'] = fechaLimite.toIso8601String();
+      }
+
+      if (archivos != null && archivos.isNotEmpty) {
+        body['archivos'] = archivos;
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/permiso-compartir'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('  Status: ${response.statusCode}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Informe compartido exitosamente');
+        return data;
+      } else {
+        final error = jsonDecode(response.body);
+        debugPrint('❌ Error del servidor: $error');
+        throw Exception(error['message'] ?? 'Error al compartir informe');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al compartir informe: $e');
       rethrow;
     }
   }
