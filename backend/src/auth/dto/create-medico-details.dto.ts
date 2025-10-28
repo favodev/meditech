@@ -8,8 +8,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Especialidades } from 'src/common/enums/especialidades.enum';
-import { TipoInstitucion } from 'src/common/enums/tipo_institucion.enum';
+import { Especialidades } from '@enums/especialidades.enum';
+import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
 class CreateInstitucionEmbebidaDto {
   @IsString()

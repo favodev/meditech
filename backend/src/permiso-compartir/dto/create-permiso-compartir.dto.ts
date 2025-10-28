@@ -9,7 +9,7 @@ import {
   IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { NivelAcceso } from '../../common/enums/nivel_acceso.enum';
+import { NivelAcceso } from '@enums/nivel_acceso.enum';
 
 class ArchivoCompartidoDto {
   @IsString()

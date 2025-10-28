@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DatabaseModule } from '../database/database.module';
+import { DatabaseModule } from '@modules/database/database.module';
 import { InstitucionService } from './institucion.service';
 import { InstitucionController } from './institucion.controller';
 import { Institucion, InstitucionSchema } from './entities/institucion.schema';

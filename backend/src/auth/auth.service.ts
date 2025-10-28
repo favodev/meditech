@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Usuario } from 'src/usuario/entities/usuario.schema';
+import { Usuario } from '@modules/usuario/entities/usuario.schema';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { InjectModel } from '@nestjs/mongoose';
@@ -13,7 +13,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
 import { UnifiedRegisterDto } from './dto/unified-register.dto';
-import { TipoUsuario } from 'src/common/enums/tipo_usuario.enum';
+import { TipoUsuario } from '@enums/tipo_usuario.enum';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()

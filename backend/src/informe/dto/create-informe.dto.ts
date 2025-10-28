@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
-import { TipoInforme } from '../../common/enums/tipo_informe.enum';
+import { TipoInforme } from '@enums/tipo_informe.enum';
 
 export class CreateInformeDto {
   @IsString()

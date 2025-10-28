@@ -6,7 +6,7 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { TipoUsuario } from '../../common/enums/tipo_usuario.enum';
+import { TipoUsuario } from '@enums/tipo_usuario.enum';
 
 export class RegisterDto {
   @IsString()

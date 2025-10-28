@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PermisoCompartir } from './entities/permiso-compartir.schema';
-import { Informe } from '../informe/entities/informe.schema';
+import { Informe } from '@modules/informe/entities/informe.schema';
 import { CreatePermisoCompartirDto } from './dto/create-permiso-compartir.dto';
 
 @Injectable()

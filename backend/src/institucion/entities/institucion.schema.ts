@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { TipoInstitucion } from '../../common/enums/tipo_institucion.enum';
+import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
 @Schema()
 export class Institucion extends Document {

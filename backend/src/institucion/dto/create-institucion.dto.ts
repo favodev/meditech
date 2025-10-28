@@ -1,5 +1,5 @@
 import { IsString, IsIn, IsNotEmpty } from 'class-validator';
-import { TipoInstitucion } from '../../common/enums/tipo_institucion.enum';
+import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
 export class CreateInstitucionDto {
   @IsString()

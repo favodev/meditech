@@ -1,9 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { TipoUsuario } from '../../common/enums/tipo_usuario.enum';
-import { Especialidades } from 'src/common/enums/especialidades.enum';
-import { Sexo } from 'src/common/enums/sexo.enum';
-import { TipoInstitucion } from 'src/common/enums/tipo_institucion.enum';
+import { TipoUsuario } from '@enums/tipo_usuario.enum';
+import { Especialidades } from '@enums/especialidades.enum';
+import { Sexo } from '@enums/sexo.enum';
+import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
 @Schema({ _id: false })
 class InstitucionEmbebida {

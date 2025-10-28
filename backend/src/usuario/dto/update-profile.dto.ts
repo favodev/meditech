@@ -8,9 +8,9 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { Sexo } from '../../common/enums/sexo.enum';
-import { Especialidades } from 'src/common/enums/especialidades.enum';
-import { TipoInstitucion } from 'src/common/enums/tipo_institucion.enum';
+import { Sexo } from '@enums/sexo.enum';
+import { Especialidades } from '@enums/especialidades.enum';
+import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
 class UpdateInstitucionEmbebidaDto {
   @IsString()

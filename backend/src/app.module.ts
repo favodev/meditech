@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from './database/database.module';
-import { UsuarioModule } from './usuario/usuario.module';
-import { InstitucionModule } from './institucion/institucion.module';
-import { AuthModule } from './auth/auth.module';
+import { DatabaseModule } from '@modules/database/database.module';
+import { UsuarioModule } from '@modules/usuario/usuario.module';
+import { InstitucionModule } from '@modules/institucion/institucion.module';
+import { AuthModule } from '@auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
-import { MedicamentoModule } from './medicamento/medicamento.module';
-import { InformeModule } from './informe/informe.module';
-import { PermisoCompartirModule } from './permiso-compartir/permiso-compartir.module';
-import { StorageModule } from './storage/storage.module';
+import { MedicamentoModule } from '@modules/medicamento/medicamento.module';
+import { InformeModule } from '@modules/informe/informe.module';
+import { PermisoCompartirModule } from '@modules/permiso-compartir/permiso-compartir.module';
+import { StorageModule } from '@modules/storage/storage.module';
 
 @Module({
   imports: [

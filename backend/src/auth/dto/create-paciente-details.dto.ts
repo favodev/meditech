@@ -6,7 +6,7 @@ import {
   IsString,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { Sexo } from 'src/common/enums/sexo.enum';
+import { Sexo } from '@enums/sexo.enum';
 
 export class CreatePacienteDetailsDto {
   @IsString()

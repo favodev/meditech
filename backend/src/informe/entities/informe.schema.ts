@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { TipoInforme } from '../../common/enums/tipo_informe.enum';
+import { TipoInforme } from '@enums/tipo_informe.enum';
 
 @Schema({ _id: false })
 export class Archivo {
