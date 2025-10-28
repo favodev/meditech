@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../services/auth_storage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,6 +14,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  final AuthStorage _authStorage = AuthStorage();
 
   @override
   void initState() {
@@ -41,11 +43,34 @@ class _SplashScreenState extends State<SplashScreen>
 
     Timer(const Duration(milliseconds: 2000), () {
       _controller.reverse().then((_) {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/login');
-        }
+        _checkAuthAndNavigate();
       });
     });
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    if (!mounted) return;
+
+    try {
+      // Verificar si hay un token guardado
+      final token = await _authStorage.getToken();
+      final user = await _authStorage.getUser();
+
+      if (!mounted) return;
+
+      if (token != null && user != null) {
+        // Hay sesión activa, ir directamente a home
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        // No hay sesión, ir a login
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    } catch (e) {
+      // En caso de error, ir a login
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    }
   }
 
   @override

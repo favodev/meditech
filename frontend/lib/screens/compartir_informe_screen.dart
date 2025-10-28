@@ -292,7 +292,7 @@ class _CompartirInformeScreenState extends State<CompartirInformeScreen> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _nivelAcceso,
+                      initialValue: _nivelAcceso,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
