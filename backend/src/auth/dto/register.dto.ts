@@ -7,6 +7,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { TipoUsuario } from '@enums/tipo_usuario.enum';
+import { IsRUT } from '@decorator/rut.decorators';
 
 export class RegisterDto {
   @IsString()
@@ -35,6 +36,7 @@ export class RegisterDto {
   @IsNotEmpty()
   password: string;
 
+  @IsRUT()
   @IsString()
   @IsNotEmpty()
   run: string;

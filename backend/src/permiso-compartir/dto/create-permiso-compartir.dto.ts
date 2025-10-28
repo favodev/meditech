@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { NivelAcceso } from '@enums/nivel_acceso.enum';
+import { IsRUT } from '@decorator/rut.decorators';
 
 class ArchivoCompartidoDto {
   @IsString()
@@ -34,6 +35,7 @@ export class CreatePermisoCompartirDto {
   @Type(() => Date)
   fecha_limite?: Date;
 
+  @IsRUT()
   @IsString()
   @IsNotEmpty()
   run_medico: string;

@@ -1,5 +1,6 @@
 import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 import { TipoInforme } from '@enums/tipo_informe.enum';
+import { IsRUT } from '@decorator/rut.decorators';
 
 export class CreateInformeDto {
   @IsString()
@@ -14,6 +15,7 @@ export class CreateInformeDto {
   @IsOptional()
   observaciones?: string;
 
+  @IsRUT()
   @IsString()
   @IsNotEmpty()
   run_medico: string;
