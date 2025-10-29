@@ -16,7 +16,7 @@ export class Archivo {
 
 export const ArchivoSchema = SchemaFactory.createForClass(Archivo);
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'informes' })
 export class Informe extends Document {
   @Prop({ required: true })
   titulo: string;

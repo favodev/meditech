@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
-@Schema()
+@Schema({ collection: 'instituciones' })
 export class Institucion extends Document {
   @Prop({ required: true, unique: true })
   nombre: string;

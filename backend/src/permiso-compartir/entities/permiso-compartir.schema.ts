@@ -23,7 +23,7 @@ class InformeEmbebido {
 }
 const InformeEmbebidoSchema = SchemaFactory.createForClass(InformeEmbebido);
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'permiso-compartir' })
 export class PermisoCompartir extends Document {
   @Prop({ type: String, enum: Object.values(NivelAcceso), required: true })
   nivel_acceso: NivelAcceso;

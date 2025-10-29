@@ -16,7 +16,7 @@ class InstitucionEmbebida {
 const InstitucionEmbebidaSchema =
   SchemaFactory.createForClass(InstitucionEmbebida);
 
-@Schema()
+@Schema({ collection: 'usuarios' })
 export class Usuario extends Document {
   @Prop({
     type: String,
