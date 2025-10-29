@@ -1,15 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { TipoUsuario } from '@enums/tipo_usuario.enum';
-import { Especialidades } from '@enums/especialidades.enum';
 import { Sexo } from '@enums/sexo.enum';
-import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
 @Schema({ _id: false })
 class InstitucionEmbebida {
   @Prop({ required: true })
   nombre: string;
-  @Prop({ type: String, enum: Object.values(TipoInstitucion), required: true })
+  @Prop({ required: true })
   tipo_institucion: string;
 }
 
@@ -62,7 +60,7 @@ export class Usuario extends Document {
   @Prop({ type: InstitucionEmbebidaSchema, required: false })
   institucion?: InstitucionEmbebida;
 
-  @Prop({ type: String, enum: Object.values(Especialidades), required: false })
+  @Prop({ required: false })
   especialidad?: string;
 
   @Prop({ required: false })

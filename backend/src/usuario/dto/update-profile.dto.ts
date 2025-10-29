@@ -9,15 +9,13 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { Sexo } from '@enums/sexo.enum';
-import { Especialidades } from '@enums/especialidades.enum';
-import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
 class UpdateInstitucionEmbebidaDto {
   @IsString()
   @IsOptional()
   nombre?: string;
 
-  @IsEnum(TipoInstitucion)
+  @IsString()
   @IsOptional()
   tipo?: string;
 }
@@ -58,7 +56,7 @@ export class UpdateProfileDto {
   @Type(() => UpdateInstitucionEmbebidaDto)
   institucion?: UpdateInstitucionEmbebidaDto;
 
-  @IsEnum(Especialidades)
+  @IsString()
   @IsOptional()
   especialidad?: string;
 

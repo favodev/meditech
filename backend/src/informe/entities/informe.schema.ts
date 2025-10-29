@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { TipoInforme } from '@enums/tipo_informe.enum';
 
 @Schema({ _id: false })
 export class Archivo {
@@ -21,7 +20,7 @@ export class Informe extends Document {
   @Prop({ required: true })
   titulo: string;
 
-  @Prop({ type: String, enum: Object.values(TipoInforme), required: true })
+  @Prop({ required: true })
   tipo_informe: string;
 
   @Prop()

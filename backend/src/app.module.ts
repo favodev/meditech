@@ -7,6 +7,11 @@ import { ConfigModule } from '@nestjs/config';
 import { InformeModule } from '@modules/informe/informe.module';
 import { PermisoCompartirModule } from '@modules/permiso-compartir/permiso-compartir.module';
 import { StorageModule } from '@modules/storage/storage.module';
+import { SeedModule } from '@modules/seed/seed.module';
+import { EpecialidadModule } from '@modules/epecialidad/epecialidad.module';
+import { TipoArchivoModule } from '@modules/tipo_archivo/tipo_archivo.module';
+import { TipoInformeModule } from '@modules/tipo_informe/tipo_informe.module';
+import { TipoInstitucionModule } from '@modules/tipo_institucion/tipo_institucion.module';
 
 @Module({
   imports: [
@@ -20,8 +25,11 @@ import { StorageModule } from '@modules/storage/storage.module';
     InformeModule,
     PermisoCompartirModule,
     StorageModule,
+    SeedModule,
+    EpecialidadModule,
+    TipoArchivoModule,
+    TipoInformeModule,
+    TipoInstitucionModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

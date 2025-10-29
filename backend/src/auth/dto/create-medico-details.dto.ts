@@ -1,5 +1,4 @@
 import {
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -8,15 +7,13 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Especialidades } from '@enums/especialidades.enum';
-import { TipoInstitucion } from '@enums/tipo_institucion.enum';
 
 class CreateInstitucionEmbebidaDto {
   @IsString()
   @IsNotEmpty()
   nombre: string;
 
-  @IsEnum(TipoInstitucion)
+  @IsString()
   @IsNotEmpty()
   tipo_institucion: string;
 }
@@ -28,7 +25,7 @@ export class CreateMedicoDetailsDto {
   @Type(() => CreateInstitucionEmbebidaDto)
   institucion: CreateInstitucionEmbebidaDto;
 
-  @IsEnum(Especialidades)
+  @IsString()
   @IsNotEmpty()
   especialidad: string;
 

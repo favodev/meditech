@@ -1,5 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
-import { TipoInforme } from '@enums/tipo_informe.enum';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { IsRUT } from '@decorator/rut.decorators';
 
 export class CreateInformeDto {
@@ -7,7 +6,7 @@ export class CreateInformeDto {
   @IsNotEmpty()
   titulo: string;
 
-  @IsEnum(TipoInforme)
+  @IsString()
   @IsNotEmpty()
   tipo_informe: string;
 

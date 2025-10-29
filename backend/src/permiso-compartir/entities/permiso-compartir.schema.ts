@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { TipoInforme } from '@enums/tipo_informe.enum';
 import { NivelAcceso } from '@enums/nivel_acceso.enum';
 import {
   Archivo,
@@ -12,7 +11,7 @@ class InformeEmbebido {
   @Prop({ required: true })
   titulo: string;
 
-  @Prop({ type: String, enum: Object.values(TipoInforme), required: true })
+  @Prop({ required: true })
   tipo_informe: string;
 
   @Prop()

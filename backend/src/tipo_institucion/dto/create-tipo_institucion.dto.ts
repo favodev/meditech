@@ -1,11 +1,7 @@
 import { IsString, IsNotEmpty } from 'class-validator';
 
-export class CreateInstitucionDto {
+export class CreateTipoInstitucionDto {
   @IsString()
   @IsNotEmpty()
   nombre: string;
-
-  @IsString()
-  @IsNotEmpty()
-  tipo_institucion: string;
 }
