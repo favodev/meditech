@@ -39,12 +39,6 @@ export class AuthService {
     );
 
     return {
-      usuario: {
-        id: user._id,
-        nombre: user.nombre,
-        email: user.email,
-        tipo_usuario: user.tipo_usuario,
-      },
       ...tokens,
     };
   }
