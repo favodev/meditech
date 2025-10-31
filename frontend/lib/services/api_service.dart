@@ -653,13 +653,16 @@ class ApiService {
 
   // ===== TIPOS DE INFORME =====
 
-  Future<List<Map<String, dynamic>>> getTiposInforme() async {
+  Future<List<Map<String, dynamic>>> getTiposInforme(String token) async {
     try {
       debugPrint('📥 Obteniendo tipos de informe...');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/tipo_informe'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$baseUrl/tipo-informe'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       if (response.statusCode == 200) {

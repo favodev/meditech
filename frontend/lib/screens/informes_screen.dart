@@ -46,12 +46,18 @@ class _InformesScreenState extends State<InformesScreen> {
   Future<void> _loadTiposInforme() async {
     setState(() => _loadingTiposInforme = true);
     try {
-      final tipos = await _apiService.getTiposInforme();
+      final token = await _authStorage.getToken();
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+      final tipos = await _apiService.getTiposInforme(token);
+      debugPrint('🔍 Tipos de informe recibidos: $tipos');
+      debugPrint('🔍 Cantidad de tipos: ${tipos.length}');
       setState(() {
         _tiposInforme = tipos;
       });
     } catch (e) {
-      debugPrint('Error cargando tipos de informe: $e');
+      debugPrint('❌ Error cargando tipos de informe: $e');
     } finally {
       setState(() => _loadingTiposInforme = false);
     }
@@ -95,7 +101,7 @@ class _InformesScreenState extends State<InformesScreen> {
   /// Obtiene las extensiones permitidas para mostrar al usuario
   List<String> _getAllowedExtensions() {
     if (_tiposArchivo.isEmpty) {
-      return ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']; // Fallback
+      return ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
     }
 
     return _tiposArchivo.where((tipo) => tipo['activo'] == true).map((tipo) {
@@ -358,24 +364,27 @@ class _InformesScreenState extends State<InformesScreen> {
         _isUploading = true;
       });
 
-      // Obtener token
       final token = await _authStorage.getToken();
       if (token == null) {
         throw Exception('No hay sesión activa');
       }
 
-      // Crear informe con archivos
       debugPrint('🔄 Enviando informe al servidor...');
       debugPrint('  Título: ${result['titulo']}');
       debugPrint('  Tipo: ${result['tipoInforme']}');
       debugPrint('  RUN Médico: ${result['runMedico']}');
       debugPrint('  Archivos: ${files.length}');
 
+      final titulo = result['titulo'] ?? '';
+      final tipoInforme = result['tipoInforme'] ?? '';
+      final runMedico = result['runMedico'] ?? '';
+      final observaciones = result['observaciones'] ?? '';
+
       final informeData = await _apiService.createInforme(
-        titulo: result['titulo']!,
-        tipoInforme: result['tipoInforme']!,
-        runMedico: result['runMedico']!,
-        observaciones: result['observaciones'],
+        titulo: titulo,
+        tipoInforme: tipoInforme,
+        runMedico: runMedico,
+        observaciones: observaciones,
         files: files,
         token: token,
       );
@@ -482,18 +491,43 @@ class _InformesScreenState extends State<InformesScreen> {
                     const SizedBox(height: 16),
                     _loadingTiposInforme
                         ? const Center(child: CircularProgressIndicator())
+                        : _tiposInforme.isEmpty
+                        ? Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.orange[200]!),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning, color: Colors.orange[700]),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    'No se pudieron cargar los tipos de informe. Verifica tu conexión.',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
                         : DropdownButtonFormField<String>(
                             decoration: const InputDecoration(
                               labelText: 'Tipo de informe *',
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.medical_information),
                             ),
-                            initialValue: tipoInforme,
+                            value: tipoInforme,
                             items: _tiposInforme
                                 .map(
                                   (tipo) => DropdownMenuItem<String>(
                                     value: tipo['nombre'],
-                                    child: Text(tipo['nombre']),
+                                    child: Text(
+                                      tipo['nombre'],
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
                                   ),
                                 )
                                 .toList(),
@@ -503,6 +537,12 @@ class _InformesScreenState extends State<InformesScreen> {
                                   tipoInforme = value;
                                 });
                               }
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Selecciona un tipo de informe';
+                              }
+                              return null;
                             },
                           ),
                     const SizedBox(height: 16),
@@ -561,12 +601,34 @@ class _InformesScreenState extends State<InformesScreen> {
                       return;
                     }
 
-                    Navigator.pop(context, {
-                      'titulo': tituloController.text.trim(),
-                      'tipoInforme': tipoInforme,
-                      'runMedico': runMedicoController.text.trim(),
-                      'observaciones': observacionesController.text.trim(),
-                    });
+                    if (tipoInforme == null || tipoInforme!.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Por favor selecciona un tipo de informe',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (Navigator.canPop(context)) {
+                      final retTitulo = tituloController.text.trim();
+                      final retTipo = tipoInforme ?? '';
+                      final retRun = runMedicoController.text.trim();
+                      final retObs = observacionesController.text.trim();
+                      debugPrint(
+                        '📤 Diálogo: pop con {titulo: $retTitulo, tipo: $retTipo, run: $retRun, obs: $retObs}',
+                      );
+
+                      Navigator.pop(context, <String, String>{
+                        'titulo': retTitulo,
+                        'tipoInforme': retTipo,
+                        'runMedico': retRun,
+                        'observaciones': retObs,
+                      });
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2196F3),
