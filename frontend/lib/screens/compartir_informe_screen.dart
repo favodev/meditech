@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage.dart';
+import '../utils/rut_formatter.dart';
 
 class CompartirInformeScreen extends StatefulWidget {
   final Map<String, dynamic> informe;
@@ -46,36 +47,6 @@ class _CompartirInformeScreenState extends State<CompartirInformeScreen> {
     super.dispose();
   }
 
-  String _formatRun(String run) {
-    // Eliminar puntos, guiones y espacios
-    run = run.replaceAll(RegExp(r'[.\s-]'), '');
-
-    if (run.isEmpty) return '';
-
-    // Separar el dígito verificador
-    String cuerpo = run.substring(0, run.length - 1);
-    String dv = run.substring(run.length - 1);
-
-    // Formatear con puntos
-    String formatted = '';
-    int count = 0;
-    for (int i = cuerpo.length - 1; i >= 0; i--) {
-      if (count == 3) {
-        formatted = '.$formatted';
-        count = 0;
-      }
-      formatted = cuerpo[i] + formatted;
-      count++;
-    }
-
-    return '$formatted-$dv';
-  }
-
-  String _cleanRun(String run) {
-    // Eliminar puntos, guiones y espacios para enviar al backend
-    return run.replaceAll(RegExp(r'[.\s-]'), '');
-  }
-
   Future<void> _compartirInforme() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -90,7 +61,7 @@ class _CompartirInformeScreenState extends State<CompartirInformeScreen> {
         throw Exception('No se encontró el token de autenticación');
       }
 
-      final runMedico = _cleanRun(_runController.text);
+      final runMedico = cleanRut(_runController.text);
       final informeId = widget.informe['_id'];
 
       await _apiService.compartirInforme(
@@ -246,6 +217,7 @@ class _CompartirInformeScreenState extends State<CompartirInformeScreen> {
                     TextFormField(
                       controller: _runController,
                       keyboardType: TextInputType.text,
+                      inputFormatters: [RutFormatter()],
                       decoration: InputDecoration(
                         hintText: 'Ej: 12.345.678-9',
                         prefixIcon: const Icon(Icons.person),
@@ -255,23 +227,11 @@ class _CompartirInformeScreenState extends State<CompartirInformeScreen> {
                         filled: true,
                         fillColor: Colors.white,
                       ),
-                      onChanged: (value) {
-                        // Auto-formatear mientras escribe
-                        final formatted = _formatRun(value);
-                        if (formatted != value) {
-                          _runController.value = TextEditingValue(
-                            text: formatted,
-                            selection: TextSelection.collapsed(
-                              offset: formatted.length,
-                            ),
-                          );
-                        }
-                      },
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingrese el RUT del médico';
                         }
-                        final clean = _cleanRun(value);
+                        final clean = cleanRut(value);
                         if (clean.length < 8 || clean.length > 9) {
                           return 'RUT inválido';
                         }

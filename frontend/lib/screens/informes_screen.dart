@@ -6,7 +6,6 @@ import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
-import '../models/tipo_informe.dart';
 import 'compartir_informe_screen.dart';
 
 class InformesScreen extends StatefulWidget {
@@ -28,11 +27,81 @@ class _InformesScreenState extends State<InformesScreen> {
   UserModel? _currentUser;
   String _sortOrder = 'reciente'; // 'reciente', 'antiguo', 'alfabetico'
 
+  // Tipos de informe dinámicos
+  List<Map<String, dynamic>> _tiposInforme = [];
+  bool _loadingTiposInforme = false;
+
+  // Tipos de archivo permitidos
+  List<Map<String, dynamic>> _tiposArchivo = [];
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadInformes();
+    _loadTiposInforme();
+    _loadTiposArchivo();
+  }
+
+  Future<void> _loadTiposInforme() async {
+    setState(() => _loadingTiposInforme = true);
+    try {
+      final tipos = await _apiService.getTiposInforme();
+      setState(() {
+        _tiposInforme = tipos;
+      });
+    } catch (e) {
+      debugPrint('Error cargando tipos de informe: $e');
+    } finally {
+      setState(() => _loadingTiposInforme = false);
+    }
+  }
+
+  Future<void> _loadTiposArchivo() async {
+    try {
+      final tipos = await _apiService.getTiposArchivo();
+      setState(() {
+        _tiposArchivo = tipos;
+      });
+    } catch (e) {
+      debugPrint('Error cargando tipos de archivo: $e');
+    }
+  }
+
+  /// Valida que todos los archivos tengan extensiones permitidas
+  bool _validateFileExtensions(List<File> files) {
+    if (_tiposArchivo.isEmpty) {
+      debugPrint('⚠️ No se han cargado tipos de archivo del backend');
+      return true; // Permitir si no hay datos del backend (fallback)
+    }
+
+    final allowedExtensions = _tiposArchivo
+        .where((tipo) => tipo['activo'] == true)
+        .map((tipo) => (tipo['extension'] as String).toLowerCase())
+        .toSet();
+
+    debugPrint('📄 Extensiones permitidas: $allowedExtensions');
+
+    for (final file in files) {
+      final extension = file.path.split('.').last.toLowerCase();
+      if (!allowedExtensions.contains('.$extension')) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Obtiene las extensiones permitidas para mostrar al usuario
+  List<String> _getAllowedExtensions() {
+    if (_tiposArchivo.isEmpty) {
+      return ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']; // Fallback
+    }
+
+    return _tiposArchivo.where((tipo) => tipo['activo'] == true).map((tipo) {
+      final ext = tipo['extension'] as String;
+      return ext.startsWith('.') ? ext.substring(1) : ext;
+    }).toList();
   }
 
   @override
@@ -227,10 +296,12 @@ class _InformesScreenState extends State<InformesScreen> {
     debugPrint('👤 RUN del usuario: ${_currentUser!.run}');
 
     try {
-      // PRIMERO: Seleccionar archivos
+      // PRIMERO: Seleccionar archivos con extensiones permitidas
+      final allowedExtensions = _getAllowedExtensions();
+
       FilePickerResult? fileResult = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
+        allowedExtensions: allowedExtensions,
         allowMultiple: true,
       );
 
@@ -257,6 +328,22 @@ class _InformesScreenState extends State<InformesScreen> {
             const SnackBar(
               content: Text('No se pudieron cargar los archivos seleccionados'),
               backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Validar extensiones de archivo contra el backend
+      if (!_validateFileExtensions(files)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '❌ Tipo de archivo no permitido. Extensiones válidas: ${allowedExtensions.join(", ")}',
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
             ),
           );
         }
@@ -338,8 +425,7 @@ class _InformesScreenState extends State<InformesScreen> {
     final tituloController = TextEditingController();
     final runMedicoController = TextEditingController();
     final observacionesController = TextEditingController();
-    String tipoInforme =
-        TipoInforme.consultaGeneral; // ← Usar constante del enum
+    String? tipoInforme;
 
     return showDialog<Map<String, String>>(
       context: context,
@@ -394,29 +480,31 @@ class _InformesScreenState extends State<InformesScreen> {
                       autofocus: true,
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo de informe *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.medical_information),
-                      ),
-                      initialValue: tipoInforme,
-                      items: TipoInforme.opciones
-                          .map(
-                            (opcion) => DropdownMenuItem(
-                              value: opcion.value,
-                              child: Text(opcion.label),
+                    _loadingTiposInforme
+                        ? const Center(child: CircularProgressIndicator())
+                        : DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: 'Tipo de informe *',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.medical_information),
                             ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            tipoInforme = value;
-                          });
-                        }
-                      },
-                    ),
+                            initialValue: tipoInforme,
+                            items: _tiposInforme
+                                .map(
+                                  (tipo) => DropdownMenuItem<String>(
+                                    value: tipo['nombre'],
+                                    child: Text(tipo['nombre']),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  tipoInforme = value;
+                                });
+                              }
+                            },
+                          ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: runMedicoController,

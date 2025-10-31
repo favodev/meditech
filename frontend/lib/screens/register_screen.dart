@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/api_service.dart';
+import '../utils/rut_formatter.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -44,11 +46,16 @@ class _RegisterScreenState extends State<RegisterScreen>
   List<Map<String, dynamic>> _instituciones = [];
   bool _loadingInstituciones = false;
 
+  // Listas dinámicas del backend
+  List<Map<String, dynamic>> _especialidades = [];
+  bool _loadingEspecialidades = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
     _loadInstituciones();
+    _loadEspecialidades();
   }
 
   Future<void> _loadInstituciones() async {
@@ -62,6 +69,20 @@ class _RegisterScreenState extends State<RegisterScreen>
       debugPrint('Error cargando instituciones: $e');
     } finally {
       setState(() => _loadingInstituciones = false);
+    }
+  }
+
+  Future<void> _loadEspecialidades() async {
+    setState(() => _loadingEspecialidades = true);
+    try {
+      final especialidades = await _apiService.getEspecialidades();
+      setState(() {
+        _especialidades = especialidades;
+      });
+    } catch (e) {
+      debugPrint('Error cargando especialidades: $e');
+    } finally {
+      setState(() => _loadingEspecialidades = false);
     }
   }
 
@@ -133,7 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         nombre: _nombreController.text.trim(),
         apellido: _apellidoController.text.trim(),
         email: _emailController.text.trim(),
-        run: _runController.text.trim(),
+        run: cleanRut(_runController.text), // Limpiar formato antes de enviar
         telefono: _telefonoController.text.trim(),
         password: _passwordController.text,
         pacienteDetalle: pacienteDetalle,
@@ -173,6 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     bool obscureText = false,
     Widget? suffixIcon,
     String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,6 +213,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           keyboardType: keyboardType,
           obscureText: obscureText,
           validator: validator,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.grey[400]),
@@ -456,7 +479,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                         _buildTextField(
                           label: 'RUN',
                           controller: _runController,
-                          hint: '12345678-9',
+                          hint: '12.345.678-9',
+                          keyboardType: TextInputType.text,
+                          inputFormatters: [RutFormatter()],
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Ingresa tu RUN';
@@ -735,131 +760,102 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                initialValue: _especialidad,
-                                isExpanded: true,
-                                decoration: InputDecoration(
-                                  hintText: 'Selecciona tu especialidad',
-                                  hintStyle: TextStyle(color: Colors.grey[400]),
-                                  filled: true,
-                                  fillColor: Colors.grey[50],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF2196F3),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.red,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Colors.red,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
-                                  ),
-                                ),
-                                icon: Icon(
-                                  Icons.arrow_drop_down,
-                                  color: Colors.grey[600],
-                                ),
-                                dropdownColor: Colors.white,
-                                menuMaxHeight: 300,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                ),
-                                items:
-                                    [
-                                          'Cardiologia',
-                                          'Neurologia',
-                                          'Pediatria',
-                                          'Ginecologia',
-                                          'Obstetricia',
-                                          'Traumatologia',
-                                          'Dermatologia',
-                                          'Oftalmologia',
-                                          'Otorrinolaringologia',
-                                          'Psiquiatria',
-                                          'Urologia',
-                                          'Nefrologia',
-                                          'Gastroenterologia',
-                                          'Endocrinologia',
-                                          'Neumologia',
-                                          'Reumatologia',
-                                          'Hematologia',
-                                          'Oncologia',
-                                          'Infectologia',
-                                          'Inmunologia',
-                                          'Geriatria',
-                                          'Medicina Interna',
-                                          'Medicina Familiar',
-                                          'Medicina General',
-                                          'Cirugia General',
-                                          'Cirugia Cardiovascular',
-                                          'Cirugia Plastica',
-                                          'Cirugia Pediatrica',
-                                          'Neurocirugia',
-                                          'Anestesiologia',
-                                          'Radiologia',
-                                          'Medicina Nuclear',
-                                          'Patologia',
-                                          'Medicina Legal',
-                                          'Salud Publica',
-                                          'Medicina del Trabajo',
-                                          'Medicina del Deporte',
-                                          'Medicina de Urgencia',
-                                          'Cuidados Intensivos',
-                                          'Neonatologia',
-                                          'Medicina Fisica y Rehabilitacion',
-                                          'Genetica Medica',
-                                          'Nutricion',
-                                          'Otra',
-                                        ]
-                                        .map(
-                                          (esp) => DropdownMenuItem<String>(
-                                            value: esp,
-                                            child: Text(
-                                              esp,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                              _loadingEspecialidades
+                                  ? const Center(
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : DropdownButtonFormField<String>(
+                                      initialValue: _especialidad,
+                                      isExpanded: true,
+                                      decoration: InputDecoration(
+                                        hintText: 'Selecciona tu especialidad',
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey[400],
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.grey[50],
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
                                           ),
-                                        )
-                                        .toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _especialidad = value;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Selecciona tu especialidad';
-                                  }
-                                  return null;
-                                },
-                              ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey[300]!,
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey[300]!,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFF2196F3),
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 16,
+                                            ),
+                                      ),
+                                      icon: Icon(
+                                        Icons.arrow_drop_down,
+                                        color: Colors.grey[600],
+                                      ),
+                                      dropdownColor: Colors.white,
+                                      menuMaxHeight: 300,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        color: Colors.black87,
+                                      ),
+                                      items: _especialidades
+                                          .map(
+                                            (esp) => DropdownMenuItem<String>(
+                                              value: esp['nombre'],
+                                              child: Text(
+                                                esp['nombre'],
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _especialidad = value;
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Selecciona tu especialidad';
+                                        }
+                                        return null;
+                                      },
+                                    ),
                             ],
                           ),
 

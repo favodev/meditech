@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.84:3000';
+  static const String baseUrl = 'http://192.168.1.81:3000';
 
   // Login - según el backend retorna: { usuario: {...}, accessToken, refreshToken }
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -569,6 +569,190 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('❌ Error al compartir informe: $e');
+      rethrow;
+    }
+  }
+
+  // Obtener permisos compartidos
+  Future<List<dynamic>> getPermisosCompartidos(String token) async {
+    try {
+      debugPrint('📥 Obteniendo permisos compartidos...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/permiso-compartir'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        debugPrint('✅ Permisos obtenidos: ${data.length}');
+        return data;
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al obtener permisos');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener permisos: $e');
+      rethrow;
+    }
+  }
+
+  // Revocar/actualizar permiso (cambiar activo a false)
+  Future<void> revocarPermiso(String token, String permisoId) async {
+    try {
+      debugPrint('📤 Revocando permiso: $permisoId');
+
+      final response = await http.patch(
+        Uri.parse('$baseUrl/permiso-compartir/$permisoId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'activo': false}),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Permiso revocado');
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al revocar permiso');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al revocar permiso: $e');
+      rethrow;
+    }
+  }
+
+  // Eliminar permiso
+  Future<void> deletePermiso(String token, String permisoId) async {
+    try {
+      debugPrint('🗑️ Eliminando permiso: $permisoId');
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/permiso-compartir/$permisoId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint('✅ Permiso eliminado');
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al eliminar permiso');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al eliminar permiso: $e');
+      rethrow;
+    }
+  }
+
+  // ===== TIPOS DE INFORME =====
+
+  Future<List<Map<String, dynamic>>> getTiposInforme() async {
+    try {
+      debugPrint('📥 Obteniendo tipos de informe...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/tipo_informe'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        debugPrint('✅ Tipos de informe obtenidos: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(
+          error['message'] ?? 'Error al obtener tipos de informe',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener tipos de informe: $e');
+      rethrow;
+    }
+  }
+
+  // ===== TIPOS DE ARCHIVO =====
+
+  Future<List<Map<String, dynamic>>> getTiposArchivo() async {
+    try {
+      debugPrint('📥 Obteniendo tipos de archivo...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/tipo_archivo'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        debugPrint('✅ Tipos de archivo obtenidos: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(
+          error['message'] ?? 'Error al obtener tipos de archivo',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener tipos de archivo: $e');
+      rethrow;
+    }
+  }
+
+  // ===== ESPECIALIDADES =====
+
+  Future<List<Map<String, dynamic>>> getEspecialidades() async {
+    try {
+      debugPrint('📥 Obteniendo especialidades...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/epecialidad'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        debugPrint('✅ Especialidades obtenidas: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al obtener especialidades');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener especialidades: $e');
+      rethrow;
+    }
+  }
+
+  // ===== TIPOS DE INSTITUCIÓN =====
+
+  Future<List<Map<String, dynamic>>> getTiposInstitucion() async {
+    try {
+      debugPrint('📥 Obteniendo tipos de institución...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/tipo_institucion'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        debugPrint('✅ Tipos de institución obtenidos: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(
+          error['message'] ?? 'Error al obtener tipos de institución',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener tipos de institución: $e');
       rethrow;
     }
   }
