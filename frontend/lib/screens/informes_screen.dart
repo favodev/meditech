@@ -7,6 +7,7 @@ import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
 import 'compartir_informe_screen.dart';
+import 'permisos_compartidos_screen.dart';
 
 class InformesScreen extends StatefulWidget {
   const InformesScreen({super.key});
@@ -25,7 +26,7 @@ class _InformesScreenState extends State<InformesScreen> {
   final List<Informe> _informes = [];
   List<Informe> _informesFiltrados = [];
   UserModel? _currentUser;
-  String _sortOrder = 'reciente'; // 'reciente', 'antiguo', 'alfabetico'
+  String _sortOrder = 'reciente';
 
   // Tipos de informe dinámicos
   List<Map<String, dynamic>> _tiposInforme = [];
@@ -1139,6 +1140,33 @@ class _InformesScreenState extends State<InformesScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: _isLoading ? null : _loadInformes,
             tooltip: 'Recargar',
+          ),
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () async {
+              // Navigate to permisos screen
+              final token = await _authStorage.getToken();
+              if (token == null) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Debes iniciar sesión para ver permisos'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+                return;
+              }
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PermisosCompartidosScreen(),
+                  ),
+                );
+              }
+            },
+            tooltip: 'Permisos compartidos',
           ),
         ],
       ),

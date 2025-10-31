@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'informes_screen.dart';
-import 'permisos_compartidos_screen.dart';
 import 'configuracion_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -17,7 +16,6 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const InformesScreen(),
-    const PermisosCompartidosScreen(),
     const ConfiguracionScreen(),
   ];
 
@@ -44,7 +42,6 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.file_upload),
             label: 'Informes',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.share), label: 'Permisos'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Configuración',
