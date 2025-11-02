@@ -687,6 +687,28 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getInformePublico(String token) async {
+    try {
+      debugPrint('📥 Obteniendo informe público con token: $token');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/permiso-publico/ver?token=$token'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Informe público obtenido');
+        return data;
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al obtener informe público');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener informe público: $e');
+      rethrow;
+    }
+  }
+
   // ===== TIPOS DE INFORME =====
 
   Future<List<Map<String, dynamic>>> getTiposInforme(String token) async {

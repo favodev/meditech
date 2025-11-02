@@ -10,6 +10,7 @@ import '../models/user_model.dart';
 import '../utils/rut_formatter.dart';
 import 'compartir_informe_screen.dart';
 import 'permisos_compartidos_screen.dart';
+import 'qr_scanner_screen.dart';
 
 class InformesScreen extends StatefulWidget {
   const InformesScreen({super.key});
@@ -1324,6 +1325,16 @@ class _InformesScreenState extends State<InformesScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QRScannerScreen()),
+              );
+            },
+            tooltip: 'Escanear QR',
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: _showSortOptions,
