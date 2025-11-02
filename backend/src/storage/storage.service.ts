@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GetSignedUrlConfig, Storage } from '@google-cloud/storage';
+import {
+  GetSignedUrlConfig,
+  Storage,
+  StorageOptions,
+} from '@google-cloud/storage';
 import { join } from 'path';
 
 @Injectable()
@@ -9,10 +13,14 @@ export class StorageService {
   private readonly bucketName: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.storage = new Storage({
-      keyFilename: join(process.cwd(), 'gcp-credentials.json'),
-    });
+    const options: StorageOptions = {};
+    const keyFilePath = this.configService.get('GCP_KEYFILE_PATH');
 
+    if (keyFilePath) {
+      options.keyFilename = join(process.cwd(), keyFilePath);
+    }
+
+    this.storage = new Storage(options);
     this.bucketName = this.configService.get('GCS_BUCKET_NAME') as string;
   }
 
