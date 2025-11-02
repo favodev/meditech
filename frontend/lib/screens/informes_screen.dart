@@ -1352,6 +1352,7 @@ class _InformesScreenState extends State<InformesScreen> {
               if (!mounted) return;
 
               if (token == null) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Debes iniciar sesión para ver permisos'),
@@ -1361,6 +1362,7 @@ class _InformesScreenState extends State<InformesScreen> {
                 return;
               }
 
+              if (!mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(
