@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
+import '../utils/rut_formatter.dart';
 import 'compartir_informe_screen.dart';
 import 'permisos_compartidos_screen.dart';
 
@@ -559,6 +560,7 @@ class _InformesScreenState extends State<InformesScreen> {
                         helperMaxLines: 2,
                       ),
                       keyboardType: TextInputType.text,
+                      inputFormatters: [RutFormatter()],
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -618,7 +620,7 @@ class _InformesScreenState extends State<InformesScreen> {
                     if (Navigator.canPop(context)) {
                       final retTitulo = tituloController.text.trim();
                       final retTipo = tipoInforme ?? '';
-                      final retRun = runMedicoController.text.trim();
+                      final retRun = cleanRut(runMedicoController.text);
                       final retObs = observacionesController.text.trim();
                       debugPrint(
                         '📤 Diálogo: pop con {titulo: $retTitulo, tipo: $retTipo, run: $retRun, obs: $retObs}',

@@ -70,10 +70,11 @@ class RutFormatter extends TextInputFormatter {
   }
 }
 
-/// Convierte un RUT formateado (con puntos y guión) a solo números
-/// Ejemplo: "12.345.678-9" -> "123456789"
+/// Convierte un RUT formateado (con puntos y guión) al formato requerido por el backend
+/// Ejemplo: "12.345.678-9" -> "12345678-9" (sin puntos, con guión)
 String cleanRut(String rut) {
-  return rut.toUpperCase().replaceAll(RegExp(r'[^0-9K]'), '');
+  // Eliminar solo los puntos, mantener el guión y la K
+  return rut.toUpperCase().replaceAll('.', '');
 }
 
 /// Formatea un RUT sin formato a formato chileno
