@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import * as fs from 'fs';
-import * as path from 'path';
 import { Especialidad } from '@especialidad/entities/especialidad.schema';
 import { TipoArchivo } from '@tipo_archivo/entities/tipo_archivo.schema';
 import { TipoInforme } from '@tipo_informe/entities/tipo_informe.schema';
@@ -11,7 +9,6 @@ import { TipoInstitucion } from '@tipo_institucion/entities/tipo_institucion.sch
 import { Institucion } from '@institucion/entities/institucion.schema';
 import { Usuario } from '@usuario/entities/usuario.schema';
 import { Informe } from '@informe/entities/informe.schema';
-import { StorageService } from '@storage/storage.service';
 
 @Injectable()
 export class SeedService {
@@ -30,7 +27,6 @@ export class SeedService {
     private usuarioModel: Model<Usuario>,
     @InjectModel(Informe.name)
     private informeModel: Model<Informe>,
-    private readonly storageService: StorageService,
   ) {}
 
   async seedDataBase() {
@@ -453,8 +449,9 @@ export class SeedService {
       this.institucionModel.insertMany(instituciones),
     ]);
 
+    // Crear usuarios de prueba
     const passwordHash = await bcrypt.hash('password123', 10);
-    const usuarioPrueba = new this.usuarioModel({
+    const usuario1 = new this.usuarioModel({
       tipo_usuario: 'Paciente',
       nombre: 'Johnson',
       apellido: 'Valenzuela',
@@ -464,50 +461,100 @@ export class SeedService {
       run: '20.886.732-6',
     });
 
-    Object.assign(usuarioPrueba, {
+    Object.assign(usuario1, {
       sexo: 'Masculino',
       direccion: 'Calle Arturo Prat S/N, Ñuble, Chile',
       fecha_nacimiento: new Date('2002-07-27'),
       telefono_emergencia: '+56987654321',
     });
 
-    await usuarioPrueba.save();
+    const usuario2 = new this.usuarioModel({
+      tipo_usuario: 'Paciente',
+      nombre: 'Fernando',
+      apellido: 'Vergara',
+      email: 'fernando.aurelio.vergara.ortiz@gmail.com',
+      telefono: '+56956495423',
+      password_hash:
+        '$2b$10$Mj.y4eo48upd8LEXKB4y6e6eZNHK.YUK2kCMjSzoW53zpg4Jl4D4u',
+      run: '21263713-0',
+    });
 
-    const informeData = new this.informeModel({
+    Object.assign(usuario2, {
+      sexo: 'Masculino',
+      direccion: 'Independencia 1148',
+      fecha_nacimiento: new Date('2003-02-05T03:00:00.000Z'),
+      telefono_emergencia: '+56956495423',
+    });
+
+    const usuario3 = new this.usuarioModel({
+      tipo_usuario: 'Paciente',
+      nombre: 'favo',
+      apellido: 'second',
+      email: 'kyunimexxx@gmail.com',
+      telefono: '+56999999999',
+      password_hash:
+        '$2b$10$eWl7o045Pmqb7tMnBQhk7eoI/2rznW6NlqaS/puPYDCdJXHfNgLy.',
+      run: '12762554-9',
+    });
+
+    Object.assign(usuario3, {
+      sexo: 'Masculino',
+      direccion: 'independencia, 1148',
+      fecha_nacimiento: new Date('2003-02-05T03:00:00.000Z'),
+      telefono_emergencia: '+56999999999',
+    });
+
+    await Promise.all([usuario1.save(), usuario2.save(), usuario3.save()]);
+
+    // Crear informes de prueba
+    const informe1 = new this.informeModel({
+      _id: '6904fb1ede6d2dd2ff3391ad',
+      titulo: 'Test',
+      tipo_informe: 'Consulta de Especialidad',
+      observaciones: 'aaa',
+      run_paciente: '21263713-0',
+      run_medico: '12762554-9',
+      archivos: [
+        {
+          nombre: 'IMG_20251024_193618.jpg',
+          formato: 'image/jpeg',
+          urlpath:
+            '6904fb1ede6d2dd2ff3391ad/1761934110638-img20251024193618.jpg',
+        },
+      ],
+      createdAt: new Date('2025-10-31T18:08:32.292Z'),
+      updatedAt: new Date('2025-10-31T18:08:32.292Z'),
+    });
+
+    const informe2 = new this.informeModel({
+      _id: '6907e69a1707c4b4f62fdb2e',
+      titulo: 'Testing2',
+      tipo_informe: 'Procedimiento Médico',
+      observaciones: 'nota..',
+      run_paciente: '21263713-0',
+      run_medico: '12762554-9',
+      archivos: [
+        {
+          nombre: 'IMG_20251024_193618 (2).jpg',
+          formato: 'image/jpeg',
+          urlpath:
+            '6907e69a1707c4b4f62fdb2e/1762125466038-img20251024193618-2.jpg',
+        },
+      ],
+      createdAt: new Date('2025-11-02T23:17:47.556Z'),
+      updatedAt: new Date('2025-11-02T23:17:47.556Z'),
+    });
+
+    const informe3 = new this.informeModel({
       titulo: 'Informe de Prueba',
       tipo_informe: 'Consulta General',
       observaciones: 'Paciente refiere buen estado general.',
-      run_paciente: usuarioPrueba.run,
+      run_paciente: usuario1.run,
       run_medico: '9.876.543-K',
       archivos: [],
     });
 
-    const readmePath = path.join(process.cwd(), 'README.md');
-    const readmeBuffer = fs.readFileSync(readmePath);
-    const readmeFile = {
-      buffer: readmeBuffer,
-      originalname: 'README.md',
-      mimetype: 'text/markdown',
-    } as Express.Multer.File;
-
-    const sanitizedName = readmeFile.originalname
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9.\-]/g, '');
-
-    const uploadedPath = await this.storageService.uploadFile(
-      readmeFile,
-      informeData.id,
-      sanitizedName,
-    );
-
-    informeData.archivos.push({
-      nombre: readmeFile.originalname,
-      formato: readmeFile.mimetype,
-      urlpath: uploadedPath,
-    });
-
-    const informePrueba = await informeData.save();
+    await Promise.all([informe1.save(), informe2.save(), informe3.save()]);
 
     return {
       message: 'Base de datos poblada exitosamente',
@@ -517,18 +564,43 @@ export class SeedService {
         tiposInforme: tiposInformeCreados.length,
         tiposInstitucion: tiposInstitucionCreados.length,
         instituciones: institucionesCreadas.length,
-        usuarios: 1,
-        informes: 1,
+        usuarios: 3,
+        informes: 3,
       },
-      usuarioPrueba: {
-        email: usuarioPrueba.email,
-        run: usuarioPrueba.run,
-        password: 'password123',
-      },
-      informePrueba: {
-        id: informePrueba._id,
-        titulo: informePrueba.titulo,
-      },
+      usuariosPrueba: [
+        {
+          email: usuario1.email,
+          run: usuario1.run,
+          nombre: usuario1.nombre,
+          password: 'password123',
+        },
+        {
+          email: usuario2.email,
+          run: usuario2.run,
+          nombre: usuario2.nombre,
+          password: 'fernando123',
+        },
+        {
+          email: usuario3.email,
+          run: usuario3.run,
+          nombre: usuario3.nombre,
+          password: 'favo123',
+        },
+      ],
+      informesPrueba: [
+        {
+          id: informe1._id,
+          titulo: informe1.titulo,
+        },
+        {
+          id: informe2._id,
+          titulo: informe2.titulo,
+        },
+        {
+          id: informe3._id,
+          titulo: informe3.titulo,
+        },
+      ],
     };
   }
 }
