@@ -8,7 +8,7 @@ import { InformeModule } from '@modules/informe/informe.module';
 import { PermisoCompartirModule } from '@modules/permiso-compartir/permiso-compartir.module';
 import { StorageModule } from '@modules/storage/storage.module';
 import { SeedModule } from '@modules/seed/seed.module';
-import { EpecialidadModule } from '@modules/epecialidad/epecialidad.module';
+import { EspecialidadModule } from '@modules/especialidad/especialidad.module';
 import { TipoArchivoModule } from '@modules/tipo_archivo/tipo_archivo.module';
 import { TipoInformeModule } from '@modules/tipo_informe/tipo_informe.module';
 import { TipoInstitucionModule } from '@modules/tipo_institucion/tipo_institucion.module';
@@ -27,7 +27,7 @@ import { PermisoPublicoModule } from './permiso-publico/permiso-publico.module';
     PermisoCompartirModule,
     StorageModule,
     SeedModule,
-    EpecialidadModule,
+    EspecialidadModule,
     TipoArchivoModule,
     TipoInformeModule,
     TipoInstitucionModule,

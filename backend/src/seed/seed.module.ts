@@ -5,7 +5,7 @@ import { SeedController } from './seed.controller';
 import {
   Especialidad,
   EspecialidadSchema,
-} from '@modules/epecialidad/entities/epecialidad.schema';
+} from '@modules/especialidad/entities/especialidad.schema';
 import {
   TipoArchivo,
   TipoArchivoSchema,

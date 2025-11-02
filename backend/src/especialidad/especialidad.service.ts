@@ -5,22 +5,22 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { CreateEpecialidadDto } from './dto/create-epecialidad.dto';
-import { UpdateEpecialidadDto } from './dto/update-epecialidad.dto';
-import { Especialidad } from './entities/epecialidad.schema';
+import { CreateEspecialidadDto } from './dto/create-especialidad.dto';
+import { UpdateEspecialidadDto } from './dto/update-especialidad.dto';
+import { Especialidad } from './entities/especialidad.schema';
 
 @Injectable()
-export class EpecialidadService {
+export class EspecialidadService {
   constructor(
     @InjectModel(Especialidad.name)
     private especialidadModel: Model<Especialidad>,
   ) {}
 
   async create(
-    createEpecialidadDto: CreateEpecialidadDto,
+    createEspecialidadDto: CreateEspecialidadDto,
   ): Promise<Especialidad> {
     try {
-      const especialidad = new this.especialidadModel(createEpecialidadDto);
+      const especialidad = new this.especialidadModel(createEspecialidadDto);
       return await especialidad.save();
     } catch (error) {
       if (error.code === 11000) {
@@ -44,11 +44,11 @@ export class EpecialidadService {
 
   async update(
     id: string,
-    updateEpecialidadDto: UpdateEpecialidadDto,
+    updateEspecialidadDto: UpdateEspecialidadDto,
   ): Promise<Especialidad> {
     try {
       const especialidad = await this.especialidadModel
-        .findByIdAndUpdate(id, updateEpecialidadDto, { new: true })
+        .findByIdAndUpdate(id, updateEspecialidadDto, { new: true })
         .exec();
       if (!especialidad) {
         throw new NotFoundException(`Especialidad con id ${id} no encontrada`);

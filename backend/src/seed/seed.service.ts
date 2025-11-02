@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Especialidad } from '@modules/epecialidad/entities/epecialidad.schema';
+import { Especialidad } from '@modules/especialidad/entities/especialidad.schema';
 import { TipoArchivo } from '@modules/tipo_archivo/entities/tipo_archivo.schema';
 import { TipoInforme } from '@modules/tipo_informe/entities/tipo_informe.schema';
 import { TipoInstitucion } from '@modules/tipo_institucion/entities/tipo_institucion.schema';
