@@ -10,8 +10,8 @@ export class CreateInformeDto {
   @IsNotEmpty()
   tipo_informe: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   observaciones?: string;
 
   @IsRUT()

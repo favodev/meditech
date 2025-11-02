@@ -29,15 +29,15 @@ export class CreateMedicoDetailsDto {
   @IsNotEmpty()
   especialidad: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   telefono_consultorio?: string;
 
-  @IsNumber()
   @IsOptional()
+  @IsNumber()
   anios_experiencia?: number;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   registro_mpi?: string;
 }

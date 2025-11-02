@@ -27,8 +27,8 @@ export class RegisterDto {
   @IsNotEmpty()
   email: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   telefono?: string;
 
   @IsString()

@@ -11,64 +11,64 @@ import { Transform, Type } from 'class-transformer';
 import { Sexo } from '@enums/sexo.enum';
 
 class UpdateInstitucionEmbebidaDto {
-  @IsString()
   @IsOptional()
+  @IsString()
   nombre?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   tipo?: string;
 }
 
 export class UpdateProfileDto {
-  @IsString()
   @IsOptional()
+  @IsString()
   nombre?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   apellido?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   telefono?: string;
 
-  @IsEnum(Sexo)
   @IsOptional()
+  @IsEnum(Sexo)
   sexo?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   direccion?: string;
 
-  @IsDate()
   @IsOptional()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   fecha_nacimiento?: Date;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   telefono_emergencia?: string;
 
-  @IsObject()
   @IsOptional()
+  @IsObject()
   @ValidateNested()
   @Type(() => UpdateInstitucionEmbebidaDto)
   institucion?: UpdateInstitucionEmbebidaDto;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   especialidad?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   telefono_consultorio?: string;
 
-  @IsNumber()
   @IsOptional()
+  @IsNumber()
   anios_experiencia?: number;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   registro_mpi?: string;
 }

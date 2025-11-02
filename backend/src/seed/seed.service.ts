@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Especialidad } from '@modules/epecialidad/entities/epecialidad.schema';
 import { TipoArchivo } from '@modules/tipo_archivo/entities/tipo_archivo.schema';
 import { TipoInforme } from '@modules/tipo_informe/entities/tipo_informe.schema';
 import { TipoInstitucion } from '@modules/tipo_institucion/entities/tipo_institucion.schema';
 import { Institucion } from '@modules/institucion/entities/institucion.schema';
+import { Usuario } from '@modules/usuario/entities/usuario.schema';
+import { Informe } from '@modules/informe/entities/informe.schema';
+import { StorageService } from '@modules/storage/storage.service';
 
 @Injectable()
 export class SeedService {
@@ -20,16 +26,22 @@ export class SeedService {
     private tipoInstitucionModel: Model<TipoInstitucion>,
     @InjectModel(Institucion.name)
     private institucionModel: Model<Institucion>,
+    @InjectModel(Usuario.name)
+    private usuarioModel: Model<Usuario>,
+    @InjectModel(Informe.name)
+    private informeModel: Model<Informe>,
+    private readonly storageService: StorageService,
   ) {}
 
   async seedDataBase() {
-    // Limpiar colecciones existentes
     await Promise.all([
       this.especialidadModel.deleteMany({}),
       this.tipoArchivoModel.deleteMany({}),
       this.tipoInformeModel.deleteMany({}),
       this.tipoInstitucionModel.deleteMany({}),
       this.institucionModel.deleteMany({}),
+      this.usuarioModel.deleteMany({}),
+      this.informeModel.deleteMany({}),
     ]);
 
     // Seed Especialidades (con tildes corregidas)
@@ -441,6 +453,62 @@ export class SeedService {
       this.institucionModel.insertMany(instituciones),
     ]);
 
+    const passwordHash = await bcrypt.hash('password123', 10);
+    const usuarioPrueba = new this.usuarioModel({
+      tipo_usuario: 'Paciente',
+      nombre: 'Johnson',
+      apellido: 'Valenzuela',
+      email: 'johnsondavisv4@example.com',
+      telefono: '+56912345678',
+      password_hash: passwordHash,
+      run: '20.886.732-6',
+    });
+
+    Object.assign(usuarioPrueba, {
+      sexo: 'Masculino',
+      direccion: 'Calle Arturo Prat S/N, Ñuble, Chile',
+      fecha_nacimiento: new Date('2002-07-27'),
+      telefono_emergencia: '+56987654321',
+    });
+
+    await usuarioPrueba.save();
+
+    const informeData = new this.informeModel({
+      titulo: 'Informe de Prueba',
+      tipo_informe: 'Consulta General',
+      observaciones: 'Paciente refiere buen estado general.',
+      run_paciente: usuarioPrueba.run,
+      run_medico: '9.876.543-K',
+      archivos: [],
+    });
+
+    const readmePath = path.join(process.cwd(), 'README.md');
+    const readmeBuffer = fs.readFileSync(readmePath);
+    const readmeFile = {
+      buffer: readmeBuffer,
+      originalname: 'README.md',
+      mimetype: 'text/markdown',
+    } as Express.Multer.File;
+
+    const sanitizedName = readmeFile.originalname
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9.\-]/g, '');
+
+    const uploadedPath = await this.storageService.uploadFile(
+      readmeFile,
+      informeData.id,
+      sanitizedName,
+    );
+
+    informeData.archivos.push({
+      nombre: readmeFile.originalname,
+      formato: readmeFile.mimetype,
+      urlpath: uploadedPath,
+    });
+
+    const informePrueba = await informeData.save();
+
     return {
       message: 'Base de datos poblada exitosamente',
       data: {
@@ -449,6 +517,17 @@ export class SeedService {
         tiposInforme: tiposInformeCreados.length,
         tiposInstitucion: tiposInstitucionCreados.length,
         instituciones: institucionesCreadas.length,
+        usuarios: 1,
+        informes: 1,
+      },
+      usuarioPrueba: {
+        email: usuarioPrueba.email,
+        run: usuarioPrueba.run,
+        password: 'password123',
+      },
+      informePrueba: {
+        id: informePrueba._id,
+        titulo: informePrueba.titulo,
       },
     };
   }

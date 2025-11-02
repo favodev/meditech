@@ -23,7 +23,7 @@ export class CreatePacienteDetailsDto {
   @Transform(({ value }) => new Date(value))
   fecha_nacimiento: Date;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   telefono_emergencia?: string;
 }

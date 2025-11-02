@@ -12,6 +12,7 @@ import { EpecialidadModule } from '@modules/epecialidad/epecialidad.module';
 import { TipoArchivoModule } from '@modules/tipo_archivo/tipo_archivo.module';
 import { TipoInformeModule } from '@modules/tipo_informe/tipo_informe.module';
 import { TipoInstitucionModule } from '@modules/tipo_institucion/tipo_institucion.module';
+import { PermisoPublicoModule } from './permiso-publico/permiso-publico.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TipoInstitucionModule } from '@modules/tipo_institucion/tipo_institucio
     TipoArchivoModule,
     TipoInformeModule,
     TipoInstitucionModule,
+    PermisoPublicoModule,
   ],
 })
 export class AppModule {}

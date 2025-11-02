@@ -22,6 +22,15 @@ import {
   Institucion,
   InstitucionSchema,
 } from '@modules/institucion/entities/institucion.schema';
+import {
+  Usuario,
+  UsuarioSchema,
+} from '@modules/usuario/entities/usuario.schema';
+import {
+  Informe,
+  InformeSchema,
+} from '@modules/informe/entities/informe.schema';
+import { StorageModule } from '@modules/storage/storage.module';
 
 @Module({
   imports: [
@@ -31,7 +40,10 @@ import {
       { name: TipoInforme.name, schema: TipoInformeSchema },
       { name: TipoInstitucion.name, schema: TipoInstitucionSchema },
       { name: Institucion.name, schema: InstitucionSchema },
+      { name: Usuario.name, schema: UsuarioSchema },
+      { name: Informe.name, schema: InformeSchema },
     ]),
+    StorageModule,
   ],
   controllers: [SeedController],
   providers: [SeedService],

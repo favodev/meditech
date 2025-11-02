@@ -2,17 +2,16 @@ import {
   IsEnum,
   IsMongoId,
   IsNotEmpty,
-  IsOptional,
-  IsDate,
   IsArray,
   ValidateNested,
   IsString,
+  IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { NivelAcceso } from '@enums/nivel_acceso.enum';
-import { IsRUT } from '@decorator/rut.decorators';
 
-class ArchivoCompartidoDto {
+// DTO para el sub-documento de archivo
+class ArchivoPublicoDto {
   @IsString()
   @IsNotEmpty()
   nombre: string;
@@ -26,19 +25,10 @@ class ArchivoCompartidoDto {
   urlpath: string;
 }
 
-export class CreatePermisoCompartirDto {
+export class CreatePermisoPublicoDto {
   @IsEnum(NivelAcceso)
   @IsNotEmpty()
   nivel_acceso: NivelAcceso;
-
-  @IsDate()
-  @Type(() => Date)
-  fecha_limite?: Date;
-
-  @IsRUT()
-  @IsString()
-  @IsNotEmpty()
-  run_medico: string;
 
   @IsMongoId()
   @IsNotEmpty()
@@ -47,6 +37,6 @@ export class CreatePermisoCompartirDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ArchivoCompartidoDto)
-  archivos?: ArchivoCompartidoDto[];
+  @Type(() => ArchivoPublicoDto)
+  archivos?: ArchivoPublicoDto[];
 }
