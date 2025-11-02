@@ -26,7 +26,19 @@
       "@decorator/*": ["src/common/decorators/*"],
       "@common/*": ["src/common/*"],
       "@modules/*": ["src/*"],
-      "@auth/*": ["src/auth/*"]
+      "@auth/*": ["src/auth/*"],
+      "@usuario/*": ["src/usuario/*"],
+      "@storage/*": ["src/storage/*"],
+      "@seed/*": ["src/seed/*"],
+      "@permiso-compartir/*": ["src/permiso-compartir/*"],
+      "@permiso-publico/*": ["src/permiso-publico/*"],
+      "@informe/*": ["src/informe/*"],
+      "@institucion/*": ["src/institucion/*"],
+      "@especialidad/*": ["src/especialidad/*"],
+      "@database/*": ["src/database/*"],
+      "@tipo_archivo/*": ["src/tipo_archivo/*"],
+      "@tipo_informe/*": ["src/tipo_informe/*"],
+      "@tipo_institucion/*": ["src/tipo_institucion/*"]
     }
   }
 }

@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { PermisoCompartirService } from './permiso-compartir.service';
 import { PermisoCompartirController } from './permiso-compartir.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { StorageModule } from '@modules/storage/storage.module';
+import { StorageModule } from '@storage/storage.module';
 import {
   PermisoCompartir,
   PermisoCompartirSchema,
 } from './entities/permiso-compartir.schema';
-import { InformeModule } from '@modules/informe/informe.module';
+import { InformeModule } from '@informe/informe.module';
 
 @Module({
   imports: [

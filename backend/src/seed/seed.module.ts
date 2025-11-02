@@ -5,32 +5,26 @@ import { SeedController } from './seed.controller';
 import {
   Especialidad,
   EspecialidadSchema,
-} from '@modules/especialidad/entities/especialidad.schema';
+} from '@especialidad/entities/especialidad.schema';
 import {
   TipoArchivo,
   TipoArchivoSchema,
-} from '@modules/tipo_archivo/entities/tipo_archivo.schema';
+} from '@tipo_archivo/entities/tipo_archivo.schema';
 import {
   TipoInforme,
   TipoInformeSchema,
-} from '@modules/tipo_informe/entities/tipo_informe.schema';
+} from '@tipo_informe/entities/tipo_informe.schema';
 import {
   TipoInstitucion,
   TipoInstitucionSchema,
-} from '@modules/tipo_institucion/entities/tipo_institucion.schema';
+} from '@tipo_institucion/entities/tipo_institucion.schema';
 import {
   Institucion,
   InstitucionSchema,
-} from '@modules/institucion/entities/institucion.schema';
-import {
-  Usuario,
-  UsuarioSchema,
-} from '@modules/usuario/entities/usuario.schema';
-import {
-  Informe,
-  InformeSchema,
-} from '@modules/informe/entities/informe.schema';
-import { StorageModule } from '@modules/storage/storage.module';
+} from '@institucion/entities/institucion.schema';
+import { Usuario, UsuarioSchema } from '@usuario/entities/usuario.schema';
+import { Informe, InformeSchema } from '@informe/entities/informe.schema';
+import { StorageModule } from '@storage/storage.module';
 
 @Module({
   imports: [

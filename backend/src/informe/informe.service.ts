@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Informe } from './entities/informe.schema';
 import { CreateInformeDto } from './dto/create-informe.dto';
-import { StorageService } from '@modules/storage/storage.service';
+import { StorageService } from '@storage/storage.service';
 
 @Injectable()
 export class InformeService {

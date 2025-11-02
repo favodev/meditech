@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Usuario } from '@modules/usuario/entities/usuario.schema';
+import { Usuario } from '@usuario/entities/usuario.schema';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { InjectModel } from '@nestjs/mongoose';

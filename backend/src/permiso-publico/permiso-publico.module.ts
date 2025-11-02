@@ -6,8 +6,8 @@ import {
   PermisoPublico,
   PermisoPublicoSchema,
 } from './entities/permiso-publico.schema';
-import { InformeModule } from '@modules/informe/informe.module';
-import { StorageModule } from '@modules/storage/storage.module';
+import { InformeModule } from '@informe/informe.module';
+import { StorageModule } from '@storage/storage.module';
 
 @Module({
   imports: [

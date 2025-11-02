@@ -4,14 +4,14 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Especialidad } from '@modules/especialidad/entities/especialidad.schema';
-import { TipoArchivo } from '@modules/tipo_archivo/entities/tipo_archivo.schema';
-import { TipoInforme } from '@modules/tipo_informe/entities/tipo_informe.schema';
-import { TipoInstitucion } from '@modules/tipo_institucion/entities/tipo_institucion.schema';
-import { Institucion } from '@modules/institucion/entities/institucion.schema';
-import { Usuario } from '@modules/usuario/entities/usuario.schema';
-import { Informe } from '@modules/informe/entities/informe.schema';
-import { StorageService } from '@modules/storage/storage.service';
+import { Especialidad } from '@especialidad/entities/especialidad.schema';
+import { TipoArchivo } from '@tipo_archivo/entities/tipo_archivo.schema';
+import { TipoInforme } from '@tipo_informe/entities/tipo_informe.schema';
+import { TipoInstitucion } from '@tipo_institucion/entities/tipo_institucion.schema';
+import { Institucion } from '@institucion/entities/institucion.schema';
+import { Usuario } from '@usuario/entities/usuario.schema';
+import { Informe } from '@informe/entities/informe.schema';
+import { StorageService } from '@storage/storage.service';
 
 @Injectable()
 export class SeedService {

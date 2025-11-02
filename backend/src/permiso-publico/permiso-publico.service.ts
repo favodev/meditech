@@ -7,8 +7,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import { PermisoPublico } from './entities/permiso-publico.schema';
-import { Informe, Archivo } from '@modules/informe/entities/informe.schema';
-import { StorageService } from '@modules/storage/storage.service';
+import { Informe, Archivo } from '@informe/entities/informe.schema';
+import { StorageService } from '@storage/storage.service';
 import { CreatePermisoPublicoDto } from './dto/create-permiso-publico.dto';
 import { ConfigService } from '@nestjs/config';
 

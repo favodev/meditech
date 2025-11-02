@@ -1,10 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { NivelAcceso } from '@enums/nivel_acceso.enum';
-import {
-  Archivo,
-  ArchivoSchema,
-} from '@modules/informe/entities/informe.schema';
+import { Archivo, ArchivoSchema } from '@informe/entities/informe.schema';
 
 @Schema({ _id: false })
 class InformeEmbebido {
