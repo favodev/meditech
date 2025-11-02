@@ -651,6 +651,42 @@ class ApiService {
     }
   }
 
+  // ===== PERMISO PÚBLICO (para QR) =====
+
+  Future<Map<String, dynamic>> createPermisoPublico({
+    required String informeId,
+    required String token,
+  }) async {
+    try {
+      debugPrint('📤 Creando permiso público para QR...');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/permiso-publico'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'informe_id_original': informeId,
+          'nivel_acceso': 'Lectura',
+        }),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Permiso público creado - Response completo: $data');
+        debugPrint('✅ URL generada: ${data['Url']}');
+        return data;
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al crear permiso público');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al crear permiso público: $e');
+      rethrow;
+    }
+  }
+
   // ===== TIPOS DE INFORME =====
 
   Future<List<Map<String, dynamic>>> getTiposInforme(String token) async {

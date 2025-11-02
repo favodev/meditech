@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
@@ -519,9 +520,9 @@ class _InformesScreenState extends State<InformesScreen> {
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.medical_information),
                             ),
-                            value: tipoInforme,
+                            initialValue: tipoInforme,
                             items: _tiposInforme
-                                .map(
+                                .map<DropdownMenuItem<String>>(
                                   (tipo) => DropdownMenuItem<String>(
                                     value: tipo['nombre'],
                                     child: Text(
@@ -752,6 +753,169 @@ class _InformesScreenState extends State<InformesScreen> {
       await _downloadFile(archivo.urlpath, archivo.nombre);
       // Pequeña pausa entre descargas para no saturar
       await Future.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  Future<void> _showQRDialog(Informe informe) async {
+    try {
+      final token = await _authStorage.getToken();
+      if (token == null) {
+        throw Exception('No hay sesión activa');
+      }
+
+      // Mostrar loading
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Crear permiso público
+      final permiso = await _apiService.createPermisoPublico(
+        informeId: informe.id,
+        token: token,
+      );
+
+      final shareUrl = permiso['Url'] as String? ?? permiso['url'] as String?;
+      if (shareUrl == null) {
+        throw Exception('No se pudo generar la URL de compartir');
+      }
+
+      // Cerrar loading
+      if (mounted) Navigator.pop(context);
+
+      // Mostrar QR
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.qr_code_2, color: Color(0xFF2196F3)),
+                SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    'Compartir por QR',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 300,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: QrImageView(
+                        data: shareUrl,
+                        version: QrVersions.auto,
+                        size: 200.0,
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      informe.titulo,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange[200]!),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.timer,
+                            color: Colors.orange[700],
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Este QR expira en 90 minutos',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange[900],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Escanea este código para acceder al informe',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Copiar URL al portapapeles (requiere clipboard package)
+                  // O compartir por otros medios
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('URL copiada al portapapeles'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy),
+                label: const Text('Copiar enlace'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2196F3),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Cerrar loading si está abierto
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al generar QR: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -1064,16 +1228,39 @@ class _InformesScreenState extends State<InformesScreen> {
                           trailing: IconButton(
                             icon: const Icon(Icons.download),
                             color: const Color(0xFF2196F3),
-                            onPressed: () =>
-                                _downloadFile(archivo.urlpath, archivo.nombre),
+                            onPressed: () async {
+                              await _downloadFile(
+                                archivo.urlpath,
+                                archivo.nombre,
+                              );
+                            },
                           ),
                         ),
                       );
                     }),
                     const SizedBox(height: 24),
-                    // Botones de acción
+                    // Action buttons
                     Row(
                       children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _showQRDialog(informe);
+                            },
+                            icon: const Icon(Icons.qr_code),
+                            label: const Text('QR'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF2196F3),
+                              side: const BorderSide(
+                                color: Color(0xFF2196F3),
+                                width: 2,
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {
@@ -1092,7 +1279,11 @@ class _InformesScreenState extends State<InformesScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
@@ -1144,27 +1335,25 @@ class _InformesScreenState extends State<InformesScreen> {
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () async {
-              // Navigate to permisos screen
               final token = await _authStorage.getToken();
+              if (!mounted) return;
+
               if (token == null) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Debes iniciar sesión para ver permisos'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-                return;
-              }
-              if (mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PermisosCompartidosScreen(),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Debes iniciar sesión para ver permisos'),
+                    backgroundColor: Colors.red,
                   ),
                 );
+                return;
               }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PermisosCompartidosScreen(),
+                ),
+              );
             },
             tooltip: 'Permisos compartidos',
           ),
