@@ -11,6 +11,7 @@ import { Informe, Archivo } from '@informe/entities/informe.schema';
 import { StorageService } from '@storage/storage.service';
 import { CreatePermisoPublicoDto } from './dto/create-permiso-publico.dto';
 import { ConfigService } from '@nestjs/config';
+import * as qrcode from 'qrcode';
 
 @Injectable()
 export class PermisoPublicoService {
@@ -25,7 +26,7 @@ export class PermisoPublicoService {
   async create(
     runPaciente: string,
     dto: CreatePermisoPublicoDto,
-  ): Promise<{ Url: string }> {
+  ): Promise<{ Url: string; Qr: string }> {
     const duracionMinutos = 90;
     const fechaLimite = new Date(Date.now() + duracionMinutos * 60 * 1000);
 
@@ -83,7 +84,7 @@ export class PermisoPublicoService {
     await nuevoPermiso.save();
     const publicUrl = `${baseUrl}?token=${token}`;
 
-    return { Url: publicUrl };
+    return { Url: publicUrl, Qr: await qrcode.toDataURL(publicUrl) };
   }
 
   async getPublicInforme(token: string) {
