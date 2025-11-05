@@ -5,6 +5,7 @@ import {
   UseGuards,
   Request,
   ValidationPipe,
+  Get,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermisoCompartirService } from './permiso-compartir.service';
@@ -22,5 +23,11 @@ export class PermisoCompartirController {
   ) {
     const runPaciente = req.user.run;
     return this.permisoService.create(runPaciente, createPermisoDto);
+  }
+
+  @Get('compartidos-conmigo')
+  findCompartidosConmigo(@Request() req) {
+    const runMedico = req.user.run;
+    return this.permisoService.findCompartidosConMedico(runMedico);
   }
 }

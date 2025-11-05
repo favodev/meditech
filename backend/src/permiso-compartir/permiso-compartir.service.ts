@@ -46,4 +46,13 @@ export class PermisoCompartirService {
 
     return nuevoPermiso.save();
   }
+
+  findCompartidosConMedico(runMedico: string): Promise<PermisoCompartir[]> {
+    return this.permisoModel
+      .find({
+        run_medico: runMedico,
+        fecha_limite: { $gte: new Date() },
+      })
+      .exec();
+  }
 }
