@@ -14,6 +14,8 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { UnifiedRegisterDto } from './dto/unified-register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { Verify2faDto } from './dto/verify-2fa.dto';
+import { Login2faDto } from './dto/login-2fa.dto';
 
 @Controller('')
 export class AuthController {
@@ -49,5 +51,25 @@ export class AuthController {
   changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
     const userId = req.user.userId;
     return this.auth.changePassword(userId, changePasswordDto);
+  }
+
+  @Post('2fa/setup')
+  @UseGuards(AuthGuard('jwt'))
+  setup2FA(@Request() req) {
+    const userId = req.user.userId;
+    return this.auth.setup2FA(userId);
+  }
+
+  @Post('2fa/verify-and-enable')
+  @UseGuards(AuthGuard('jwt'))
+  verifyAndEnable2FA(@Request() req, @Body(ValidationPipe) dto: Verify2faDto) {
+    const userId = req.user.userId;
+    return this.auth.verifyAndEnable2FA(userId, dto.code);
+  }
+
+  @Post('2fa/login-verify')
+  @HttpCode(200)
+  login2FA(@Body(ValidationPipe) dto: Login2faDto) {
+    return this.auth.login2fa(dto.tempToken, dto.code);
   }
 }

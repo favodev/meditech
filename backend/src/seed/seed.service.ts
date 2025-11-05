@@ -459,6 +459,8 @@ export class SeedService {
       telefono: '+56912345678',
       password_hash: passwordHash,
       run: '20.886.732-6',
+      isTwoFactorEnabled: true,
+      twoFactorSecret: 'GMKXSKLSKF7FGITG',
     });
 
     Object.assign(usuario1, {

@@ -71,6 +71,12 @@ export class Usuario extends Document {
 
   @Prop({ required: false })
   registro_mpi?: string;
+
+  @Prop({ required: false })
+  twoFactorSecret?: string;
+
+  @Prop({ required: false, default: false })
+  isTwoFactorEnabled?: boolean;
 }
 
 export const UsuarioSchema = SchemaFactory.createForClass(Usuario);

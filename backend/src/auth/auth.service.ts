@@ -15,6 +15,8 @@ import { Model, Types } from 'mongoose';
 import { UnifiedRegisterDto } from './dto/unified-register.dto';
 import { TipoUsuario } from '@enums/tipo_usuario.enum';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { authenticator } from 'otplib';
+import * as qrcode from 'qrcode';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +28,24 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.validateUser(dto);
+
+    if (user.isTwoFactorEnabled) {
+      const payload = {
+        sub: user.id,
+        email: user.email,
+        is2faTempToken: true,
+      };
+
+      const tempToken = await this.jwtService.signAsync(payload, {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+        expiresIn: '5m',
+      });
+
+      return {
+        needs2fa: true,
+        tempToken: tempToken,
+      };
+    }
 
     const tokens = await this.getTokens(
       (user._id as Types.ObjectId).toString(),
@@ -39,6 +59,7 @@ export class AuthService {
     );
 
     return {
+      needs2fa: false,
       ...tokens,
     };
   }
@@ -169,6 +190,95 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+    };
+  }
+
+  async setup2FA(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+
+    const secret = authenticator.generateSecret();
+
+    const appName = 'Meditech';
+
+    const otpauthUrl = authenticator.keyuri(user.email, appName, secret);
+
+    await this.userModel.findByIdAndUpdate(userId, {
+      twoFactorSecret: secret,
+      isTwoFactorEnabled: false,
+    });
+
+    return {
+      qrCodeDataUrl: await qrcode.toDataURL(otpauthUrl),
+      secret: secret,
+    };
+  }
+
+  async verifyAndEnable2FA(userId: string, code: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+
+    if (!user.twoFactorSecret) {
+      throw new ForbiddenException(
+        '2FA no ha sido configurado. Primero llame a /2fa/setup.',
+      );
+    }
+
+    const isValid = authenticator.verify({
+      token: code,
+      secret: user.twoFactorSecret,
+    });
+
+    if (!isValid) {
+      throw new ForbiddenException('Código 2FA inválido.');
+    }
+
+    await this.userModel.findByIdAndUpdate(userId, {
+      isTwoFactorEnabled: true,
+    });
+
+    return {
+      message: '2FA ha sido habilitado exitosamente.',
+    };
+  }
+
+  async login2fa(tempToken: string, code: string) {
+    let payload: any;
+
+    try {
+      payload = await this.jwtService.verifyAsync(tempToken, {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+      });
+    } catch (error) {
+      throw new UnauthorizedException('Token 2FA inválido o expirado.');
+    }
+
+    if (!payload.is2faTempToken) {
+      throw new UnauthorizedException('Token inválido.');
+    }
+
+    const userId = payload.sub;
+    const user = await this.userModel.findById(userId);
+    if (!user || !user.isTwoFactorEnabled || !user.twoFactorSecret) {
+      throw new UnauthorizedException(
+        'Usuario no encontrado o 2FA no habilitado.',
+      );
+    }
+
+    const isValid = authenticator.verify({
+      token: code,
+      secret: user.twoFactorSecret,
+    });
+
+    if (!isValid) {
+      throw new UnauthorizedException('Código 2FA incorrecto.');
+    }
+
+    const tokens = await this.getTokens(userId, user.email, user.run);
+    await this.updateRefreshTokenHash(userId, tokens.refreshToken);
+
+    return {
+      ...tokens,
     };
   }
 }
