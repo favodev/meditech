@@ -5,9 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.83:3000';
+  static const String baseUrl =
+      'https://api-meditech-285055742691.southamerica-west1.run.app';
 
-  // Login - según el backend retorna: { usuario: {...}, accessToken, refreshToken }
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
