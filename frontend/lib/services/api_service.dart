@@ -3,10 +3,74 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'auth_storage.dart';
 
 class ApiService {
   static const String baseUrl =
       'https://api-meditech-285055742691.southamerica-west1.run.app';
+
+  final AuthStorage _authStorage = AuthStorage();
+  bool _isRefreshing = false;
+
+  /// Ejecuta una petición HTTP con auto-refresh de token en caso de 401
+  Future<http.Response> _requestWithAutoRefresh(
+    Future<http.Response> Function(String token) request,
+  ) async {
+    String? token = await _authStorage.getToken();
+    if (token == null) {
+      throw Exception('No hay token de autenticación');
+    }
+
+    // Intentar la petición original
+    http.Response response = await request(token);
+
+    // Si recibimos 401 (Unauthorized), intentar renovar el token
+    if (response.statusCode == 401 && !_isRefreshing) {
+      _isRefreshing = true;
+      try {
+        debugPrint('🔄 Token expirado, renovando...');
+
+        final refreshToken = await _authStorage.getRefreshToken();
+        if (refreshToken == null) {
+          throw Exception('No hay refresh token');
+        }
+
+        // Renovar el token
+        final refreshResponse = await http.get(
+          Uri.parse('$baseUrl/refresh'),
+          headers: {'Authorization': 'Bearer $refreshToken'},
+        );
+
+        if (refreshResponse.statusCode == 200) {
+          final data = jsonDecode(refreshResponse.body);
+          final newToken = data['accessToken'] as String;
+          final newRefreshToken = data['refreshToken'] as String;
+
+          // Guardar los nuevos tokens
+          await _authStorage.updateTokens(newToken, newRefreshToken);
+
+          debugPrint('✅ Token renovado exitosamente');
+
+          // Reintentar la petición original con el nuevo token
+          response = await request(newToken);
+        } else {
+          debugPrint('❌ Error al renovar token: ${refreshResponse.statusCode}');
+          throw Exception(
+            'Sesión expirada, por favor inicia sesión nuevamente',
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ Error en auto-refresh: $e');
+        // Limpiar tokens si falla el refresh
+        await _authStorage.logout();
+        rethrow;
+      } finally {
+        _isRefreshing = false;
+      }
+    }
+
+    return response;
+  }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -317,13 +381,15 @@ class ApiService {
     try {
       debugPrint('📥 Obteniendo informes del usuario...');
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/informe'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await _requestWithAutoRefresh((token) async {
+        return await http.get(
+          Uri.parse('$baseUrl/informe'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+      });
 
       debugPrint('📥 Respuesta del servidor:');
       debugPrint('  Status: ${response.statusCode}');
@@ -578,13 +644,15 @@ class ApiService {
     try {
       debugPrint('📥 Obteniendo permisos compartidos...');
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/permiso-compartir'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await _requestWithAutoRefresh((token) async {
+        return await http.get(
+          Uri.parse('$baseUrl/permiso-compartir/compartidos-conmigo'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+      });
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -672,14 +740,24 @@ class ApiService {
         }),
       );
 
+      debugPrint('📥 Status code: ${response.statusCode}');
+      debugPrint('📥 Response body: ${response.body}');
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         debugPrint('✅ Permiso público creado - Response completo: $data');
         debugPrint('✅ URL generada: ${data['Url']}');
         return data;
       } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['message'] ?? 'Error al crear permiso público');
+        try {
+          final error = jsonDecode(response.body);
+          debugPrint('❌ Error del servidor: ${error['message']}');
+          debugPrint('❌ Error completo: $error');
+          throw Exception(error['message'] ?? 'Error al crear permiso público');
+        } catch (jsonError) {
+          debugPrint('❌ Error parseando respuesta: $jsonError');
+          throw Exception('Error al crear permiso público: ${response.body}');
+        }
       }
     } catch (e) {
       debugPrint('❌ Error al crear permiso público: $e');
@@ -715,13 +793,15 @@ class ApiService {
     try {
       debugPrint('📥 Obteniendo tipos de archivo...');
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/tipo-archivo'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await _requestWithAutoRefresh((token) async {
+        return await http.get(
+          Uri.parse('$baseUrl/tipo-archivo'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+      });
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -743,13 +823,15 @@ class ApiService {
     try {
       debugPrint('📥 Obteniendo tipos de informe...');
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/tipo-informe'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await _requestWithAutoRefresh((token) async {
+        return await http.get(
+          Uri.parse('$baseUrl/tipo-informe'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+      });
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -797,7 +879,7 @@ class ApiService {
       debugPrint('📥 Obteniendo tipos de institución...');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/tipo_institucion'),
+        Uri.parse('$baseUrl/tipo-institucion'),
         headers: {'Content-Type': 'application/json'},
       );
 
