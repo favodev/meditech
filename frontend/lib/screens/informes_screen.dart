@@ -34,15 +34,12 @@ class _InformesScreenState extends State<InformesScreen> {
   List<Map<String, dynamic>> _tiposInforme = [];
   bool _loadingTiposInforme = false;
 
-  List<Map<String, dynamic>> _tiposArchivo = [];
-
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadInformes();
     _loadTiposInforme();
-    _loadTiposArchivo();
   }
 
   Future<void> _loadTiposInforme() async {
@@ -65,37 +62,16 @@ class _InformesScreenState extends State<InformesScreen> {
     }
   }
 
-  Future<void> _loadTiposArchivo() async {
-    try {
-      final token = await _authStorage.getToken();
-      if (token == null) return;
-
-      final tipos = await _apiService.getTiposArchivo(token);
-      setState(() {
-        _tiposArchivo = tipos;
-      });
-    } catch (e) {
-      debugPrint('Error cargando tipos de archivo: $e');
-    }
-  }
-
   /// Valida que todos los archivos tengan extensiones permitidas
   bool _validateFileExtensions(List<File> files) {
-    if (_tiposArchivo.isEmpty) {
-      debugPrint('⚠️ No se han cargado tipos de archivo del backend');
-      return true; // Permitir si no hay datos del backend (fallback)
-    }
+    final allowedExtensions = _getAllowedExtensions();
+    final allowedExtensionsSet = allowedExtensions.map((e) => e.toLowerCase()).toSet();
 
-    final allowedExtensions = _tiposArchivo
-        .where((tipo) => tipo['activo'] == true)
-        .map((tipo) => (tipo['extension'] as String).toLowerCase())
-        .toSet();
-
-    debugPrint('📄 Extensiones permitidas: $allowedExtensions');
+    debugPrint('📄 Extensiones permitidas: $allowedExtensionsSet');
 
     for (final file in files) {
       final extension = file.path.split('.').last.toLowerCase();
-      if (!allowedExtensions.contains('.$extension')) {
+      if (!allowedExtensionsSet.contains(extension)) {
         return false;
       }
     }
@@ -104,15 +80,22 @@ class _InformesScreenState extends State<InformesScreen> {
   }
 
   /// Obtiene las extensiones permitidas para mostrar al usuario
+  /// Lista estática de extensiones médicas comunes
   List<String> _getAllowedExtensions() {
-    if (_tiposArchivo.isEmpty) {
-      return ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
-    }
-
-    return _tiposArchivo.where((tipo) => tipo['activo'] == true).map((tipo) {
-      final ext = tipo['extension'] as String;
-      return ext.startsWith('.') ? ext.substring(1) : ext;
-    }).toList();
+    return [
+      'pdf',
+      'jpg',
+      'jpeg',
+      'png',
+      'doc',
+      'docx',
+      'xls',
+      'xlsx',
+      'dcm',
+      'tiff',
+      'bmp',
+      'txt'
+    ];
   }
 
   @override
