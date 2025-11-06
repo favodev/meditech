@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -884,15 +885,16 @@ class _InformesScreenState extends State<InformesScreen> {
                 child: const Text('Cerrar'),
               ),
               ElevatedButton.icon(
-                onPressed: () {
-                  // Copiar URL al portapapeles (requiere clipboard package)
-                  // O compartir por otros medios
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('URL copiada al portapapeles'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: shareUrl));
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('URL copiada al portapapeles'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.copy),
                 label: const Text('Copiar enlace'),
