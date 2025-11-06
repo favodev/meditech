@@ -22,6 +22,12 @@ export class StorageService {
 
     this.storage = new Storage(options);
     this.bucketName = this.configService.get('GCS_BUCKET_NAME') as string;
+
+    if (!this.bucketName) {
+      throw new Error(
+        'GCS_BUCKET_NAME no está definido en las variables de entorno',
+      );
+    }
   }
 
   async uploadFile(
@@ -29,6 +35,10 @@ export class StorageService {
     destinationPath: string,
     name: string,
   ): Promise<string> {
+    if (!file || !file.buffer) {
+      throw new Error('Archivo no válido o vacío');
+    }
+
     const fileName = `${Date.now()}-${name}`;
     const fullPath = `${destinationPath}/${fileName}`;
     const bucket = this.storage.bucket(this.bucketName);
@@ -40,10 +50,7 @@ export class StorageService {
 
     return new Promise((resolve, reject) => {
       blobStream.on('error', (err) => reject(err));
-      blobStream.on('finish', () => {
-        const publicUrl = `${fullPath}`;
-        resolve(publicUrl);
-      });
+      blobStream.on('finish', () => resolve(fullPath));
       blobStream.end(file.buffer);
     });
   }
@@ -54,6 +61,15 @@ export class StorageService {
     format: string,
     minutesToExpire: number = 15,
   ): Promise<string> {
+    const file = this.storage.bucket(this.bucketName).file(path);
+
+    const [exists] = await file.exists();
+    if (!exists) {
+      throw new Error(
+        `El archivo no existe en el bucket. Path: ${path}, Bucket: ${this.bucketName}`,
+      );
+    }
+
     const options: GetSignedUrlConfig = {
       version: 'v4',
       action: 'read',
@@ -61,26 +77,27 @@ export class StorageService {
       responseDisposition: `attachment; filename="${originalFileName}.${format}"`,
     };
 
-    const [url] = await this.storage
-      .bucket(this.bucketName)
-      .file(path)
-      .getSignedUrl(options);
-
+    const [url] = await file.getSignedUrl(options);
     return url;
   }
 
   async openFile(path: string, minutesToExpire: number = 15): Promise<string> {
+    const file = this.storage.bucket(this.bucketName).file(path);
+
+    const [exists] = await file.exists();
+    if (!exists) {
+      throw new Error(
+        `El archivo no existe en el bucket. Path: ${path}, Bucket: ${this.bucketName}`,
+      );
+    }
+
     const options: GetSignedUrlConfig = {
       version: 'v4',
       action: 'read',
       expires: Date.now() + minutesToExpire * 60 * 1000,
     };
 
-    const [url] = await this.storage
-      .bucket(this.bucketName)
-      .file(path)
-      .getSignedUrl(options);
-
+    const [url] = await file.getSignedUrl(options);
     return url;
   }
 }
