@@ -55,6 +55,24 @@ class _LoginScreenState extends State<LoginScreen>
         _passwordController.text,
       );
 
+      // Verificar si requiere 2FA
+      if (response['requires2FA'] == true) {
+        // Navegar a la pantalla de 2FA
+        if (mounted) {
+          setState(() => _isLoading = false);
+          Navigator.pushNamed(
+            context,
+            '/two-factor',
+            arguments: {
+              'email': _emailController.text.trim(),
+              'password': _passwordController.text,
+            },
+          );
+        }
+        return;
+      }
+
+      // Login normal sin 2FA
       final user = UserModel.fromJson(response);
       await _authStorage.saveUser(user);
 

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.81:3000';
+  static const String baseUrl = 'http://192.168.1.83:3000';
 
   // Login - según el backend retorna: { usuario: {...}, accessToken, refreshToken }
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -440,8 +440,8 @@ class ApiService {
     try {
       debugPrint('📤 Cambiando contraseña...');
 
-      final response = await http.patch(
-        Uri.parse('$baseUrl/change-password'),
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/change-password'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -455,7 +455,7 @@ class ApiService {
       debugPrint('📥 Respuesta del servidor:');
       debugPrint('  Status: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         debugPrint('✅ Contraseña cambiada exitosamente');
         return data;
@@ -815,6 +815,64 @@ class ApiService {
     } catch (e) {
       debugPrint('❌ Error al obtener tipos de institución: $e');
       rethrow;
+    }
+  }
+
+  // ===== AUTENTICACIÓN DE DOS FACTORES (2FA) =====
+
+  /// Login con código 2FA
+  Future<Map<String, dynamic>> login2FA({
+    required String email,
+    required String password,
+    required String code,
+  }) async {
+    try {
+      debugPrint('📤 Intentando login con 2FA...');
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/login-2fa'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password, 'code': code}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('✅ Login 2FA exitoso');
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error en autenticación 2FA');
+      }
+    } catch (e) {
+      debugPrint('❌ Error en login 2FA: $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  /// Verificar código 2FA
+  Future<Map<String, dynamic>> verify2FA({
+    required String code,
+    required String token,
+  }) async {
+    try {
+      debugPrint('📤 Verificando código 2FA...');
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/verify-2fa'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'code': code}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('✅ Código 2FA verificado');
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Código 2FA inválido');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al verificar 2FA: $e');
+      throw Exception('Error de conexión: $e');
     }
   }
 }

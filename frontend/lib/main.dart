@@ -5,6 +5,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/change_password_screen.dart';
+import 'screens/two_factor_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,6 +24,24 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       onGenerateRoute: (settings) {
+        // Manejar rutas con argumentos
+        if (settings.name == '/two-factor') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return PageRouteBuilder(
+            settings: settings,
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                TwoFactorScreen(
+                  email: args?['email'] ?? '',
+                  password: args?['password'] ?? '',
+                ),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+            transitionDuration: const Duration(milliseconds: 500),
+          );
+        }
+
         final routes = <String, WidgetBuilder>{
           '/': (context) => const SplashScreen(),
           '/home': (context) => const MainScreen(),
