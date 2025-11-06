@@ -709,7 +709,35 @@ class ApiService {
     }
   }
 
-  // ===== TIPOS DE INFORME =====
+  // ===== TIPOS DE ARCHIVO =====
+
+  Future<List<Map<String, dynamic>>> getTiposArchivo(String token) async {
+    try {
+      debugPrint('📥 Obteniendo tipos de archivo...');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/tipo-archivo'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        debugPrint('✅ Tipos de informe obtenidos: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(
+          error['message'] ?? 'Error al obtener tipos de archivo',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener tipos de archivo: $e');
+      rethrow;
+    }
+  }
 
   Future<List<Map<String, dynamic>>> getTiposInforme(String token) async {
     try {
@@ -738,35 +766,6 @@ class ApiService {
       rethrow;
     }
   }
-
-  // ===== TIPOS DE ARCHIVO =====
-
-  Future<List<Map<String, dynamic>>> getTiposArchivo() async {
-    try {
-      debugPrint('📥 Obteniendo tipos de archivo...');
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/tipo_archivo'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        debugPrint('✅ Tipos de archivo obtenidos: ${data.length}');
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(
-          error['message'] ?? 'Error al obtener tipos de archivo',
-        );
-      }
-    } catch (e) {
-      debugPrint('❌ Error al obtener tipos de archivo: $e');
-      rethrow;
-    }
-  }
-
-  // ===== ESPECIALIDADES =====
 
   Future<List<Map<String, dynamic>>> getEspecialidades() async {
     try {

@@ -70,7 +70,10 @@ class _InformesScreenState extends State<InformesScreen> {
 
   Future<void> _loadTiposArchivo() async {
     try {
-      final tipos = await _apiService.getTiposArchivo();
+      final token = await _authStorage.getToken();
+      if (token == null) return;
+
+      final tipos = await _apiService.getTiposArchivo(token);
       setState(() {
         _tiposArchivo = tipos;
       });
