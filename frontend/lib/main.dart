@@ -7,6 +7,7 @@ import 'screens/profile_screen.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/two_factor_screen.dart';
 import 'screens/setup_2fa_screen.dart';
+import 'screens/two_factor_methods_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,7 +26,6 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       onGenerateRoute: (settings) {
-        // Manejar rutas con argumentos
         if (settings.name == '/two-factor') {
           final args = settings.arguments as Map<String, dynamic>?;
           return PageRouteBuilder(
@@ -47,6 +47,7 @@ class MyApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/change-password': (context) => const ChangePasswordScreen(),
+          '/2fa-methods': (context) => const TwoFactorMethodsScreen(),
           '/setup-2fa': (context) => const Setup2FAScreen(),
         };
 

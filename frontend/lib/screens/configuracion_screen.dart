@@ -57,7 +57,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () async {
                     await Navigator.pushNamed(context, '/profile');
-                    _load2FAStatus(); // Recargar por si cambió algo
+                    _load2FAStatus();
                   },
                 ),
                 const Divider(),
@@ -117,7 +117,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                   ),
                   onTap: () async {
                     await Navigator.pushNamed(context, '/2fa-methods');
-                    _load2FAStatus(); // Recargar después de volver
+                    _load2FAStatus();
                   },
                 ),
                 const Divider(),
@@ -126,7 +126,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      // Mostrar diálogo de confirmación
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
