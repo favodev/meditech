@@ -506,8 +506,8 @@ class ApiService {
     try {
       debugPrint('📤 Cambiando contraseña...');
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/change-password'),
+      final response = await http.patch(
+        Uri.parse('$baseUrl/change-password'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -901,42 +901,41 @@ class ApiService {
 
   // ===== AUTENTICACIÓN DE DOS FACTORES (2FA) =====
 
-  /// Login con código 2FA
-  Future<Map<String, dynamic>> login2FA({
-    required String email,
-    required String password,
-    required String code,
-  }) async {
+  /// Configurar 2FA (generar QR code)
+  Future<Map<String, dynamic>> setup2FA(String token) async {
     try {
-      debugPrint('📤 Intentando login con 2FA...');
+      debugPrint('📤 Configurando 2FA...');
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/login-2fa'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password, 'code': code}),
+        Uri.parse('$baseUrl/2fa/setup'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Login 2FA exitoso');
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        debugPrint('✅ 2FA configurado: QR generado');
+        return data; // { qrCodeDataUrl, secret }
       } else {
         final error = jsonDecode(response.body);
-        throw Exception(error['message'] ?? 'Error en autenticación 2FA');
+        throw Exception(error['message'] ?? 'Error al configurar 2FA');
       }
     } catch (e) {
-      debugPrint('❌ Error en login 2FA: $e');
+      debugPrint('❌ Error al configurar 2FA: $e');
       throw Exception('Error de conexión: $e');
     }
   }
 
-  /// Verificar código 2FA
-  Future<Map<String, dynamic>> verify2FA({
-    required String code,
+  /// Verificar y activar 2FA (después de escanear QR)
+  Future<Map<String, dynamic>> verifyAndEnable2FA({
     required String token,
+    required String code,
   }) async {
     try {
-      debugPrint('📤 Verificando código 2FA...');
+      debugPrint('📤 Verificando y activando 2FA...');
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/verify-2fa'),
+        Uri.parse('$baseUrl/2fa/verify-and-enable'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -945,14 +944,42 @@ class ApiService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Código 2FA verificado');
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        debugPrint('✅ 2FA activado exitosamente');
+        return data; // { message: "2FA ha sido habilitado exitosamente." }
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['message'] ?? 'Código 2FA inválido');
       }
     } catch (e) {
-      debugPrint('❌ Error al verificar 2FA: $e');
+      debugPrint('❌ Error al activar 2FA: $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  /// Login verificando código 2FA (segunda etapa del login)
+  Future<Map<String, dynamic>> login2FAVerify({
+    required String tempToken,
+    required String code,
+  }) async {
+    try {
+      debugPrint('📤 Verificando código 2FA en login...');
+      final response = await http.post(
+        Uri.parse('$baseUrl/2fa/login-verify'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'tempToken': tempToken, 'code': code}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Login 2FA exitoso');
+        return data; // { accessToken, refreshToken }
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Código 2FA incorrecto');
+      }
+    } catch (e) {
+      debugPrint('❌ Error en login 2FA: $e');
       throw Exception('Error de conexión: $e');
     }
   }

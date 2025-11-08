@@ -5,14 +5,9 @@ import '../services/auth_storage.dart';
 import '../models/user_model.dart';
 
 class TwoFactorScreen extends StatefulWidget {
-  final String email;
-  final String password;
+  final String tempToken;
 
-  const TwoFactorScreen({
-    super.key,
-    required this.email,
-    required this.password,
-  });
+  const TwoFactorScreen({super.key, required this.tempToken});
 
   @override
   State<TwoFactorScreen> createState() => _TwoFactorScreenState();
@@ -38,15 +33,16 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await _apiService.login2FA(
-        email: widget.email,
-        password: widget.password,
+      // Llamar al endpoint correcto: POST /2fa/login-verify
+      final result = await _apiService.login2FAVerify(
+        tempToken: widget.tempToken,
         code: _codeController.text.trim(),
       );
 
-      // Guardar usuario y tokens
+      // El backend retorna { accessToken, refreshToken }
+      // Necesitamos crear un objeto usuario completo
       final user = UserModel.fromJson({
-        ...result['usuario'],
+        'usuario': {},
         'accessToken': result['accessToken'],
         'refreshToken': result['refreshToken'],
       });

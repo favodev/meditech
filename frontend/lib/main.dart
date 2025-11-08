@@ -30,10 +30,7 @@ class MyApp extends StatelessWidget {
           return PageRouteBuilder(
             settings: settings,
             pageBuilder: (context, animation, secondaryAnimation) =>
-                TwoFactorScreen(
-                  email: args?['email'] ?? '',
-                  password: args?['password'] ?? '',
-                ),
+                TwoFactorScreen(tempToken: args?['tempToken'] ?? ''),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
                   return FadeTransition(opacity: animation, child: child);

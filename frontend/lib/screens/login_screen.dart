@@ -55,24 +55,21 @@ class _LoginScreenState extends State<LoginScreen>
         _passwordController.text,
       );
 
-      // Verificar si requiere 2FA
-      if (response['requires2FA'] == true) {
-        // Navegar a la pantalla de 2FA
+      // Verificar si requiere 2FA (backend retorna needs2fa: true)
+      if (response['needs2fa'] == true) {
+        // Navegar a la pantalla de 2FA con el tempToken
         if (mounted) {
           setState(() => _isLoading = false);
           Navigator.pushNamed(
             context,
             '/two-factor',
-            arguments: {
-              'email': _emailController.text.trim(),
-              'password': _passwordController.text,
-            },
+            arguments: {'tempToken': response['tempToken']},
           );
         }
         return;
       }
 
-      // Login normal sin 2FA
+      // Login normal sin 2FA - guardar usuario y tokens
       final user = UserModel.fromJson(response);
       await _authStorage.saveUser(user);
 
