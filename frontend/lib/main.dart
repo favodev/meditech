@@ -6,6 +6,7 @@ import 'screens/register_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/two_factor_screen.dart';
+import 'screens/setup_2fa_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/profile': (context) => const ProfileScreen(),
           '/change-password': (context) => const ChangePasswordScreen(),
+          '/setup-2fa': (context) => const Setup2FAScreen(),
         };
 
         final builder = routes[settings.name];

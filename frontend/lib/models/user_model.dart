@@ -9,6 +9,7 @@ class UserModel {
   final String tipoUsuario;
   final String accessToken;
   final String refreshToken;
+  final bool isTwoFactorEnabled;
 
   UserModel({
     required this.id,
@@ -18,6 +19,7 @@ class UserModel {
     required this.tipoUsuario,
     required this.accessToken,
     required this.refreshToken,
+    this.isTwoFactorEnabled = false,
   });
 
   // Decodifica el payload del JWT (sin verificar la firma)
@@ -64,7 +66,9 @@ class UserModel {
         run = jwtPayload['run'] ?? '';
         debugPrint('✅ JWT decodificado exitosamente');
         debugPrint('📋 Payload completo: $jwtPayload');
-        debugPrint('🆔 RUN extraído del JWT: ${run.isNotEmpty ? run : "❌ VACÍO"}');
+        debugPrint(
+          '🆔 RUN extraído del JWT: ${run.isNotEmpty ? run : "❌ VACÍO"}',
+        );
       } else {
         debugPrint('❌ Error: No se pudo decodificar el JWT');
       }
@@ -99,6 +103,8 @@ class UserModel {
       tipoUsuario: usuario?['tipo_usuario'] ?? json['tipo_usuario'] ?? '',
       accessToken: accessToken,
       refreshToken: json['refreshToken'] ?? json['refresh_token'] ?? '',
+      isTwoFactorEnabled:
+          usuario?['isTwoFactorEnabled'] ?? json['isTwoFactorEnabled'] ?? false,
     );
   }
 
@@ -110,6 +116,7 @@ class UserModel {
         'email': email,
         'run': run,
         'tipo_usuario': tipoUsuario,
+        'isTwoFactorEnabled': isTwoFactorEnabled,
       },
       'accessToken': accessToken,
       'refreshToken': refreshToken,
