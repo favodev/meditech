@@ -56,19 +56,22 @@ class UserModel {
       '🔑 Access Token presente: ${accessToken.isNotEmpty ? "SÍ (${accessToken.length} chars)" : "NO"}',
     );
 
-    // Intentar extraer el RUN del JWT
     String run = '';
+    String userId = '';
+    String email = '';
 
     if (accessToken.isNotEmpty) {
       debugPrint('🔓 Intentando decodificar JWT...');
       final jwtPayload = _decodeJwt(accessToken);
       if (jwtPayload != null) {
         run = jwtPayload['run'] ?? '';
+        userId = jwtPayload['sub'] ?? '';
+        email = jwtPayload['email'] ?? '';
         debugPrint('✅ JWT decodificado exitosamente');
         debugPrint('📋 Payload completo: $jwtPayload');
-        debugPrint(
-          '🆔 RUN extraído del JWT: ${run.isNotEmpty ? run : "❌ VACÍO"}',
-        );
+        debugPrint('🆔 UserId del JWT: $userId');
+        debugPrint('📧 Email del JWT: $email');
+        debugPrint('🆔 RUN del JWT: ${run.isNotEmpty ? run : "❌ VACÍO"}');
       } else {
         debugPrint('❌ Error: No se pudo decodificar el JWT');
       }
@@ -76,7 +79,6 @@ class UserModel {
       debugPrint('⚠️ No hay access token para decodificar');
     }
 
-    // Si no se pudo extraer del JWT, intentar desde el objeto usuario
     if (run.isEmpty) {
       final runFromUser = usuario?['run'] ?? json['run'] ?? '';
       if (runFromUser.isNotEmpty) {
@@ -96,9 +98,9 @@ class UserModel {
     debugPrint('========================================\n');
 
     return UserModel(
-      id: usuario?['id'] ?? json['id'] ?? json['_id'] ?? '',
+      id: usuario?['id'] ?? userId ?? json['id'] ?? json['_id'] ?? '',
       nombre: usuario?['nombre'] ?? json['nombre'] ?? '',
-      email: usuario?['email'] ?? json['email'] ?? '',
+      email: usuario?['email'] ?? email ?? json['email'] ?? '',
       run: run,
       tipoUsuario: usuario?['tipo_usuario'] ?? json['tipo_usuario'] ?? '',
       accessToken: accessToken,

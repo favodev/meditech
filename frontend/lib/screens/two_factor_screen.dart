@@ -33,25 +33,37 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Llamar al endpoint correcto: POST /2fa/login-verify
+      // 1. Verificar código 2FA y obtener tokens
       final result = await _apiService.login2FAVerify(
         tempToken: widget.tempToken,
         code: _codeController.text.trim(),
       );
 
-      // El backend retorna { accessToken, refreshToken }
-      // Necesitamos crear un objeto usuario completo
-      final user = UserModel.fromJson({
-        'usuario': {},
-        'accessToken': result['accessToken'],
-        'refreshToken': result['refreshToken'],
-      });
+      debugPrint('📦 Resultado 2FA: $result');
 
+      // Extraer tokens
+      final String accessToken = result['accessToken'];
+      final String refreshToken = result['refreshToken'];
+
+      // 2. Obtener información completa del usuario con el nuevo token
+      final userProfile = await _apiService.getUserProfile(accessToken);
+
+      debugPrint('👤 Perfil de usuario obtenido: $userProfile');
+
+      // 3. Crear el objeto usuario completo
+      final Map<String, dynamic> loginData = {
+        'usuario': userProfile,
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
+
+      // 4. Guardar usuario completo
+      final user = UserModel.fromJson(loginData);
       await _authStorage.saveUser(user);
 
       if (!mounted) return;
 
-      // Navegar al home
+      // 5. Navegar al home
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     } catch (e) {
       if (!mounted) return;
@@ -86,11 +98,8 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Icono
                 Icon(Icons.security, size: 80, color: const Color(0xFF2196F3)),
                 const SizedBox(height: 32),
-
-                // Título
                 Text(
                   'Autenticación de Dos Factores',
                   textAlign: TextAlign.center,
@@ -102,7 +111,6 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Descripción
                 Text(
                   'Ingresa el código de 6 dígitos generado por tu aplicación de autenticación',
                   textAlign: TextAlign.center,
@@ -110,7 +118,6 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Campo de código
                 TextFormField(
                   controller: _codeController,
                   decoration: InputDecoration(
@@ -147,7 +154,6 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Botón verificar
                 ElevatedButton(
                   onPressed: _isLoading ? null : _verify2FA,
                   style: ElevatedButton.styleFrom(
@@ -178,7 +184,6 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Botón cancelar
                 TextButton(
                   onPressed: _isLoading
                       ? null

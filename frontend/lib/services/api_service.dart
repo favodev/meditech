@@ -81,19 +81,22 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
-        final error = jsonDecode(response.body);
+        final error = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(error['message'] ?? 'Error en login');
       }
     } catch (e) {
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
       throw Exception('Error de conexión: $e');
     }
   }
 
   // Register Unificado - según el backend usa UnifiedRegisterDto
   Future<Map<String, dynamic>> register({
-    required String tipoUsuario, // 'Medico' o 'Paciente'
+    required String tipoUsuario,
     required String nombre,
     required String apellido,
     required String email,
@@ -138,6 +141,35 @@ class ApiService {
         throw Exception(error['message'] ?? 'Error en registro');
       }
     } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Obtener perfil del usuario autenticado
+  Future<Map<String, dynamic>> getUserProfile(String token) async {
+    try {
+      debugPrint('📤 Obteniendo perfil de usuario...');
+      final response = await http.get(
+        Uri.parse('$baseUrl/usuario/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        debugPrint('✅ Perfil obtenido exitosamente');
+        return data;
+      } else {
+        final error = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(error['message'] ?? 'Error al obtener perfil');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener perfil: $e');
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
       throw Exception('Error de conexión: $e');
     }
   }
@@ -914,20 +946,22 @@ class ApiService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
         debugPrint('✅ 2FA configurado: QR generado');
-        return data; // { qrCodeDataUrl, secret }
+        return data;
       } else {
-        final error = jsonDecode(response.body);
+        final error = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(error['message'] ?? 'Error al configurar 2FA');
       }
     } catch (e) {
       debugPrint('❌ Error al configurar 2FA: $e');
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
       throw Exception('Error de conexión: $e');
     }
   }
 
-  /// Verificar y activar 2FA (después de escanear QR)
   Future<Map<String, dynamic>> verifyAndEnable2FA({
     required String token,
     required String code,
@@ -944,20 +978,22 @@ class ApiService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
         debugPrint('✅ 2FA activado exitosamente');
-        return data; // { message: "2FA ha sido habilitado exitosamente." }
+        return data;
       } else {
-        final error = jsonDecode(response.body);
+        final error = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(error['message'] ?? 'Código 2FA inválido');
       }
     } catch (e) {
       debugPrint('❌ Error al activar 2FA: $e');
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
       throw Exception('Error de conexión: $e');
     }
   }
 
-  /// Login verificando código 2FA (segunda etapa del login)
   Future<Map<String, dynamic>> login2FAVerify({
     required String tempToken,
     required String code,
@@ -971,15 +1007,19 @@ class ApiService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
         debugPrint('✅ Login 2FA exitoso');
-        return data; // { accessToken, refreshToken }
+        debugPrint('📦 Data recibida: $data');
+        return data;
       } else {
-        final error = jsonDecode(response.body);
+        final error = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(error['message'] ?? 'Código 2FA incorrecto');
       }
     } catch (e) {
       debugPrint('❌ Error en login 2FA: $e');
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
       throw Exception('Error de conexión: $e');
     }
   }
