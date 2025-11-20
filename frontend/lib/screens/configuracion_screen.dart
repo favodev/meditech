@@ -35,6 +35,76 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     }
   }
 
+  Widget _buildOptionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Color? iconColor,
+    Color? subtitleColor,
+    Widget? trailing,
+  }) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: (iconColor ?? const Color(0xFF2196F3)).withOpacity(
+                    0.1,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: iconColor ?? const Color(0xFF2196F3),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: subtitleColor ?? Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (trailing != null) ...[trailing, const SizedBox(width: 8)],
+              Icon(Icons.chevron_right, color: Colors.grey[400]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,79 +127,88 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
+              padding: const EdgeInsets.all(16),
               children: [
-                const SizedBox(height: 16),
-                ListTile(
-                  leading: const Icon(Icons.person, color: Color(0xFF2196F3)),
-                  title: const Text('Perfil'),
-                  subtitle: const Text('Ver y editar tu información'),
-                  trailing: const Icon(Icons.chevron_right),
+                const SizedBox(height: 8),
+                // Sección Cuenta
+                Text(
+                  'Cuenta',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  icon: Icons.person,
+                  title: 'Perfil',
+                  subtitle: 'Ver y editar tu información',
                   onTap: () async {
                     await Navigator.pushNamed(context, '/profile');
                     _load2FAStatus();
                   },
                 ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.lock, color: Color(0xFF2196F3)),
-                  title: const Text('Cambiar Contraseña'),
-                  subtitle: const Text('Actualiza tu contraseña'),
-                  trailing: const Icon(Icons.chevron_right),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  icon: Icons.lock,
+                  title: 'Cambiar Contraseña',
+                  subtitle: 'Actualiza tu contraseña',
                   onTap: () {
                     Navigator.pushNamed(context, '/change-password');
                   },
                 ),
-                const Divider(),
-                ListTile(
-                  leading: Icon(
-                    Icons.security,
-                    color: _is2FAEnabled
-                        ? Colors.green
-                        : const Color(0xFF2196F3),
+                const SizedBox(height: 24),
+                // Sección Seguridad
+                Text(
+                  'Seguridad',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                    letterSpacing: 0.5,
                   ),
-                  title: const Text('Autenticación de Dos Factores (2FA)'),
-                  subtitle: Text(
-                    _is2FAEnabled
-                        ? '✓ Activado - Tu cuenta está protegida'
-                        : 'Protege tu cuenta con verificación adicional',
-                    style: TextStyle(
-                      color: _is2FAEnabled ? Colors.green : null,
-                      fontWeight: _is2FAEnabled ? FontWeight.w500 : null,
-                    ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_is2FAEnabled)
-                        Container(
+                ),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  icon: Icons.security,
+                  iconColor: _is2FAEnabled
+                      ? Colors.green
+                      : const Color(0xFF2196F3),
+                  title: 'Autenticación de Dos Factores',
+                  subtitle: _is2FAEnabled
+                      ? '✓ Activado - Tu cuenta está protegida'
+                      : 'Protege tu cuenta con verificación adicional',
+                  subtitleColor: _is2FAEnabled
+                      ? Colors.green
+                      : Colors.grey[600],
+                  trailing: _is2FAEnabled
+                      ? Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
+                            horizontal: 10,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.green.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green),
+                            border: Border.all(color: Colors.green, width: 1.5),
                           ),
                           child: const Text(
-                            'ON',
+                            'ACTIVO',
                             style: TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: 11,
                             ),
                           ),
-                        ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.chevron_right),
-                    ],
-                  ),
+                        )
+                      : null,
                   onTap: () async {
                     await Navigator.pushNamed(context, '/2fa-methods');
                     _load2FAStatus();
                   },
                 ),
-                const Divider(),
                 const SizedBox(height: 32),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),

@@ -100,10 +100,20 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Autenticación de Dos Factores'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Autenticación de Dos Factores',
+          style: TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            letterSpacing: -0.5,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1A1A1A)),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -182,7 +192,7 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
                                 ),
                               ),
                               Text(
-                                'Google Authenticator',
+                                'App Autenticadora',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,

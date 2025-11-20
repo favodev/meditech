@@ -119,11 +119,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Cambiar Contraseña'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Cambiar Contraseña',
+          style: TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            letterSpacing: -0.5,
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1A1A1A)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -133,24 +142,41 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Información de seguridad
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue[200]!),
+                  side: BorderSide(color: Colors.blue[200]!),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue[700]),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Por seguridad, deberás iniciar sesión nuevamente después de cambiar tu contraseña.',
-                        style: TextStyle(color: Colors.blue[900], fontSize: 13),
+                color: Colors.blue[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.info_outline,
+                          color: Colors.blue[700],
+                          size: 20,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Por seguridad, deberás iniciar sesión nuevamente después de cambiar tu contraseña.',
+                          style: TextStyle(
+                            color: Colors.blue[900],
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
