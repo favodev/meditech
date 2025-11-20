@@ -115,6 +115,12 @@ export class Usuario extends Document {
 
   @Prop({ type: DatosAnticoagulacionSchema, required: false })
   datos_anticoagulacion?: DatosAnticoagulacion;
+
+  @Prop({ required: false })
+  passwordResetToken?: string; // Guardaremos el HASH del token, no el token real
+
+  @Prop({ required: false })
+  passwordResetExpires?: Date; // Fecha límite para usarlo
 }
 
 export const UsuarioSchema = SchemaFactory.createForClass(Usuario);
