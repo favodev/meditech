@@ -105,7 +105,7 @@ export class SeedService {
       'Licencia Médica',
       'Consentimiento Informado',
       'Certificado de Vacunación',
-
+      'Documento Adjunto',
       'Resultado INR',
       'Calendario de Dosis',
     ];

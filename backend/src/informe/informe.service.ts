@@ -65,8 +65,15 @@ export class InformeService {
           sanitizedName,
         );
 
+        let tipoArchivo = 'Documento Adjunto';
+
+        if (dto.tipo_informe === 'Control de Anticoagulación') {
+          tipoArchivo = 'Resultado INR';
+        }
+
         informeData.archivos.push({
           nombre: file.originalname,
+          tipo: tipoArchivo,
           formato: file.mimetype,
           urlpath: path,
         });

@@ -59,6 +59,9 @@ export class Archivo {
 
   @Prop({ required: true })
   urlpath: string;
+
+  @Prop({ required: true })
+  tipo: string;
 }
 export const ArchivoSchema = SchemaFactory.createForClass(Archivo);
 
