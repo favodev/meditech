@@ -32,6 +32,7 @@ export class PermisoCompartirService {
       titulo: informeOriginal.titulo,
       tipo_informe: informeOriginal.tipo_informe,
       observaciones: informeOriginal.observaciones,
+      contenido_clinico: informeOriginal.contenido_clinico,
       archivos: dto.archivos ?? informeOriginal.archivos,
     };
 

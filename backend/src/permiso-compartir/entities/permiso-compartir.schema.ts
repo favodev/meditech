@@ -3,6 +3,43 @@ import { Document, Types } from 'mongoose';
 import { NivelAcceso } from '@enums/nivel_acceso.enum';
 import { Archivo, ArchivoSchema } from '@informe/entities/informe.schema';
 
+// ==========================================
+// Sub-Schema: Calendario de Dosis (Visual)
+// ==========================================
+@Schema({ _id: false })
+class CalendarioDosis {
+  @Prop({ type: String }) lunes: string;
+  @Prop({ type: String }) martes: string;
+  @Prop({ type: String }) miercoles: string;
+  @Prop({ type: String }) jueves: string;
+  @Prop({ type: String }) viernes: string;
+  @Prop({ type: String }) sabado: string;
+  @Prop({ type: String }) domingo: string;
+}
+const CalendarioDosisSchema = SchemaFactory.createForClass(CalendarioDosis);
+
+// ==========================================
+// Sub-Schema: Contenido Clínico (TACO)
+// ==========================================
+@Schema({ _id: false })
+class ContenidoClinico {
+  @Prop({ type: Number })
+  inr_actual?: number;
+
+  @Prop({ type: Date })
+  fecha_proximo_control?: Date;
+
+  @Prop({ type: CalendarioDosisSchema })
+  dosis_diaria?: CalendarioDosis;
+
+  @Prop({ type: Number })
+  dosis_semanal_total_mg?: number;
+
+  @Prop({ type: String })
+  observaciones_clinicas?: string;
+}
+const ContenidoClinicoSchema = SchemaFactory.createForClass(ContenidoClinico);
+
 @Schema({ _id: false })
 class InformeEmbebido {
   @Prop({ required: true })
@@ -13,6 +50,9 @@ class InformeEmbebido {
 
   @Prop()
   observaciones?: string;
+
+  @Prop({ type: ContenidoClinicoSchema, required: false })
+  contenido_clinico?: ContenidoClinico;
 
   @Prop({ type: [ArchivoSchema] })
   archivos: Archivo[];
