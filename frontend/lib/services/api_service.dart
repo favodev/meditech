@@ -279,6 +279,7 @@ class ApiService {
     required String tipoInforme,
     required String runMedico,
     String? observaciones,
+    Map<String, dynamic>? contenidoClinico,
     List<File>? files,
     required String token,
   }) async {
@@ -300,6 +301,7 @@ class ApiService {
         'run_medico': runMedico,
         if (observaciones != null && observaciones.isNotEmpty)
           'observaciones': observaciones,
+        if (contenidoClinico != null) 'contenido_clinico': contenidoClinico,
       };
 
       request.fields['data'] = jsonEncode(informeData);

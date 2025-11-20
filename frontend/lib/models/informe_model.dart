@@ -18,6 +18,28 @@ class Archivo {
   }
 }
 
+class ContenidoClinico {
+  final Map<String, double> dosisDiaria;
+  final double? dosisSemanalMg;
+
+  ContenidoClinico({required this.dosisDiaria, this.dosisSemanalMg});
+
+  factory ContenidoClinico.fromJson(Map<String, dynamic> json) {
+    return ContenidoClinico(
+      dosisDiaria:
+          (json['dosis_diaria'] as Map<String, dynamic>?)?.map(
+            (key, value) => MapEntry(key, (value as num).toDouble()),
+          ) ??
+          {},
+      dosisSemanalMg: (json['dosis_semanal_mg'] as num?)?.toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dosis_diaria': dosisDiaria, 'dosis_semanal_mg': dosisSemanalMg};
+  }
+}
+
 class Informe {
   final String id;
   final String titulo;
@@ -26,6 +48,7 @@ class Informe {
   final String runPaciente;
   final String runMedico;
   final List<Archivo> archivos;
+  final ContenidoClinico? contenidoClinico;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -37,6 +60,7 @@ class Informe {
     required this.runPaciente,
     required this.runMedico,
     required this.archivos,
+    this.contenidoClinico,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -54,6 +78,9 @@ class Informe {
               ?.map((archivo) => Archivo.fromJson(archivo))
               .toList() ??
           [],
+      contenidoClinico: json['contenido_clinico'] != null
+          ? ContenidoClinico.fromJson(json['contenido_clinico'])
+          : null,
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toString()),
       updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toString()),
     );
@@ -68,6 +95,7 @@ class Informe {
       'run_paciente': runPaciente,
       'run_medico': runMedico,
       'archivos': archivos.map((archivo) => archivo.toJson()).toList(),
+      'contenido_clinico': contenidoClinico?.toJson(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

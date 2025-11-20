@@ -4,7 +4,7 @@ import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
-import 'qr_scanner_screen.dart';
+import 'informes_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,8 +20,6 @@ class _HomeScreenState extends State<HomeScreen> {
   UserModel? _currentUser;
   List<Informe> _recentInformes = [];
   bool _isLoading = true;
-  int _totalInformes = 0;
-  int _informesCompartidos = 0;
 
   @override
   void initState() {
@@ -47,19 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
         // Obtener los 3 más recientes
         informesList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-        // Contar compartidos
-        int compartidos = 0;
-        try {
-          final permisos = await _apiService.getPermisosCompartidos(token);
-          compartidos = permisos.length;
-        } catch (e) {
-          debugPrint('Error al cargar permisos compartidos: $e');
-        }
-
         setState(() {
-          _totalInformes = informesList.length;
           _recentInformes = informesList.take(3).toList();
-          _informesCompartidos = compartidos;
           _isLoading = false;
         });
       }
@@ -72,11 +59,20 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Home'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Inicio',
+          style: TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            letterSpacing: -0.5,
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: false,
         automaticallyImplyLeading: false,
       ),
       body: RefreshIndicator(
@@ -94,12 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildGreeting(),
                       const SizedBox(height: 24),
 
-                      // Estadísticas
-                      _buildStatistics(),
-                      const SizedBox(height: 24),
-
-                      // Acciones rápidas
-                      _buildQuickActions(),
+                      // Categorías
+                      _buildCategoriesGrid(),
                       const SizedBox(height: 24),
 
                       // Documentos recientes
@@ -115,128 +107,94 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildGreeting() {
     final hour = DateTime.now().hour;
     String greeting;
-    IconData icon;
 
     if (hour < 12) {
-      greeting = 'Buenos días';
-      icon = Icons.wb_sunny;
+      greeting = 'Buenos días,';
     } else if (hour < 18) {
-      greeting = 'Buenas tardes';
-      icon = Icons.wb_cloudy;
+      greeting = 'Buenas tardes,';
     } else {
-      greeting = 'Buenas noches';
-      icon = Icons.nights_stay;
+      greeting = 'Buenas noches,';
     }
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+        gradient: LinearGradient(
+          colors: [const Color(0xFF1565C0), const Color(0xFF1E88E5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF1565C0).withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 40),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  greeting,
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _currentUser?.nombre ?? 'Usuario',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatistics() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Total de Informes',
-            _totalInformes.toString(),
-            Icons.description,
-            const Color(0xFF4CAF50),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Compartidos',
-            _informesCompartidos.toString(),
-            Icons.share,
-            const Color(0xFFFF9800),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 12),
           Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: color,
+            greeting,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+              fontWeight: FontWeight.w300,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          const SizedBox(height: 8),
+          Text(
+            _currentUser?.nombre ?? 'Usuario',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildCategoriesGrid() {
+    final categories = [
+      {
+        'title': 'Control TACO',
+        'icon': Icons.monitor_heart,
+        'color': Colors.red,
+        'filter': 'Control de Anticoagulación',
+      },
+      {
+        'title': 'Exámenes',
+        'icon': Icons.science,
+        'color': Colors.blue,
+        'filter': 'Examen',
+      },
+      {
+        'title': 'Recetas',
+        'icon': Icons.receipt_long,
+        'color': Colors.green,
+        'filter': 'Receta',
+      },
+      {
+        'title': 'Otros',
+        'icon': Icons.folder_open,
+        'color': Colors.orange,
+        'filter': '',
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Acciones Rápidas',
+          'Tipos de Control',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -244,79 +202,74 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionButton(
-                'Escanear QR',
-                Icons.qr_code_scanner,
-                const Color(0xFF9C27B0),
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const QRScannerScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionButton(
-                'Ver Todos',
-                Icons.folder_open,
-                const Color(0xFF2196F3),
-                () {
-                  // Cambiar a pestaña de informes
-                  DefaultTabController.of(context).animateTo(1);
-                },
-              ),
-            ),
-          ],
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.5,
+          ),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final cat = categories[index];
+            return _buildCategoryCard(
+              cat['title'] as String,
+              cat['icon'] as IconData,
+              cat['color'] as Color,
+              cat['filter'] as String,
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildActionButton(
-    String label,
+  Widget _buildCategoryCard(
+    String title,
     IconData icon,
     Color color,
-    VoidCallback onTap,
+    String filter,
   ) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InformesScreen(initialFilter: filter),
+          ),
+        );
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color, color.withValues(alpha: 0.7)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.3),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
+              color: Colors.grey.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
           ],
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 32),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 32),
+            ),
             const SizedBox(height: 8),
             Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
         ),

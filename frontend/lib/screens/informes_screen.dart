@@ -13,7 +13,8 @@ import 'compartir_informe_screen.dart';
 import 'permisos_compartidos_screen.dart';
 
 class InformesScreen extends StatefulWidget {
-  const InformesScreen({super.key});
+  final String? initialFilter;
+  const InformesScreen({super.key, this.initialFilter});
 
   @override
   State<InformesScreen> createState() => _InformesScreenState();
@@ -31,41 +32,22 @@ class _InformesScreenState extends State<InformesScreen> {
   UserModel? _currentUser;
   String _sortOrder = 'reciente';
 
-  List<Map<String, dynamic>> _tiposInforme = [];
-  bool _loadingTiposInforme = false;
-
   @override
   void initState() {
     super.initState();
+    if (widget.initialFilter != null) {
+      _searchController.text = widget.initialFilter!;
+    }
     _loadUserData();
     _loadInformes();
-    _loadTiposInforme();
-  }
-
-  Future<void> _loadTiposInforme() async {
-    setState(() => _loadingTiposInforme = true);
-    try {
-      final token = await _authStorage.getToken();
-      if (token == null) {
-        throw Exception('No hay token de autenticación');
-      }
-      final tipos = await _apiService.getTiposInforme(token);
-      debugPrint('🔍 Tipos de informe recibidos: $tipos');
-      debugPrint('🔍 Cantidad de tipos: ${tipos.length}');
-      setState(() {
-        _tiposInforme = tipos;
-      });
-    } catch (e) {
-      debugPrint('❌ Error cargando tipos de informe: $e');
-    } finally {
-      setState(() => _loadingTiposInforme = false);
-    }
   }
 
   /// Valida que todos los archivos tengan extensiones permitidas
   bool _validateFileExtensions(List<File> files) {
     final allowedExtensions = _getAllowedExtensions();
-    final allowedExtensionsSet = allowedExtensions.map((e) => e.toLowerCase()).toSet();
+    final allowedExtensionsSet = allowedExtensions
+        .map((e) => e.toLowerCase())
+        .toSet();
 
     debugPrint('📄 Extensiones permitidas: $allowedExtensionsSet');
 
@@ -94,7 +76,7 @@ class _InformesScreenState extends State<InformesScreen> {
       'dcm',
       'tiff',
       'bmp',
-      'txt'
+      'txt',
     ];
   }
 
@@ -228,7 +210,17 @@ class _InformesScreenState extends State<InformesScreen> {
       setState(() {
         _informes.clear();
         _informes.addAll(informes);
-        _informesFiltrados = List.from(_informes);
+
+        if (_searchController.text.isNotEmpty) {
+          final query = _searchController.text;
+          _informesFiltrados = _informes.where((informe) {
+            return informe.titulo.toLowerCase().contains(query.toLowerCase()) ||
+                informe.tipoInforme.toLowerCase().contains(query.toLowerCase());
+          }).toList();
+        } else {
+          _informesFiltrados = List.from(_informes);
+        }
+
         _sortInformes();
         _isLoading = false;
       });
@@ -363,16 +355,19 @@ class _InformesScreenState extends State<InformesScreen> {
       debugPrint('  RUN Médico: ${result['runMedico']}');
       debugPrint('  Archivos: ${files.length}');
 
-      final titulo = result['titulo'] ?? '';
-      final tipoInforme = result['tipoInforme'] ?? '';
-      final runMedico = result['runMedico'] ?? '';
-      final observaciones = result['observaciones'] ?? '';
+      final titulo = result['titulo'] as String? ?? '';
+      final tipoInforme = result['tipoInforme'] as String? ?? '';
+      final runMedico = result['runMedico'] as String? ?? '';
+      final observaciones = result['observaciones'] as String? ?? '';
+      final contenidoClinico =
+          result['contenidoClinico'] as Map<String, dynamic>?;
 
       final informeData = await _apiService.createInforme(
         titulo: titulo,
         tipoInforme: tipoInforme,
         runMedico: runMedico,
         observaciones: observaciones,
+        contenidoClinico: contenidoClinico,
         files: files,
         token: token,
       );
@@ -416,21 +411,31 @@ class _InformesScreenState extends State<InformesScreen> {
     }
   }
 
-  Future<Map<String, String>?> _showInformeDialog({
+  Future<Map<String, dynamic>?> _showInformeDialog({
     required int fileCount,
   }) async {
     final tituloController = TextEditingController();
     final runMedicoController = TextEditingController();
     final observacionesController = TextEditingController();
-    String? tipoInforme;
 
-    return showDialog<Map<String, String>>(
+    // Controladores para dosis diaria
+    final Map<String, TextEditingController> dosisControllers = {
+      'Lunes': TextEditingController(),
+      'Martes': TextEditingController(),
+      'Miércoles': TextEditingController(),
+      'Jueves': TextEditingController(),
+      'Viernes': TextEditingController(),
+      'Sábado': TextEditingController(),
+      'Domingo': TextEditingController(),
+    };
+
+    return showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Nuevo Informe Médico'),
+              title: const Text('Nuevo Control de Anticoagulación'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -462,77 +467,23 @@ class _InformesScreenState extends State<InformesScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Completa la información del informe:',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      'Información General:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: tituloController,
                       decoration: const InputDecoration(
                         labelText: 'Título del informe *',
                         border: OutlineInputBorder(),
-                        hintText: 'Ej: Examen de sangre - Enero 2025',
+                        hintText: 'Ej: Control Enero 2025',
                         prefixIcon: Icon(Icons.title),
                       ),
                       autofocus: true,
                     ),
-                    const SizedBox(height: 16),
-                    _loadingTiposInforme
-                        ? const Center(child: CircularProgressIndicator())
-                        : _tiposInforme.isEmpty
-                        ? Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.orange[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.orange[200]!),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.warning, color: Colors.orange[700]),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Text(
-                                    'No se pudieron cargar los tipos de informe. Verifica tu conexión.',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Tipo de informe *',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.medical_information),
-                            ),
-                            initialValue: tipoInforme,
-                            items: _tiposInforme
-                                .map<DropdownMenuItem<String>>(
-                                  (tipo) => DropdownMenuItem<String>(
-                                    value: tipo['nombre'],
-                                    child: Text(
-                                      tipo['nombre'],
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() {
-                                  tipoInforme = value;
-                                });
-                              }
-                            },
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Selecciona un tipo de informe';
-                              }
-                              return null;
-                            },
-                          ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: runMedicoController,
@@ -547,6 +498,50 @@ class _InformesScreenState extends State<InformesScreen> {
                       keyboardType: TextInputType.text,
                       inputFormatters: [RutFormatter()],
                     ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Dosis Diaria (mg):',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...dosisControllers.entries.map((entry) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 100,
+                              child: Text(
+                                entry.key,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: TextField(
+                                controller: entry.value,
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  suffixText: 'mg',
+                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                     const SizedBox(height: 16),
                     TextField(
                       controller: observacionesController,
@@ -590,11 +585,26 @@ class _InformesScreenState extends State<InformesScreen> {
                       return;
                     }
 
-                    if (tipoInforme == null || tipoInforme!.isEmpty) {
+                    // Recolectar dosis
+                    final Map<String, double> dosisDiaria = {};
+                    bool hasDosis = false;
+                    dosisControllers.forEach((day, controller) {
+                      if (controller.text.isNotEmpty) {
+                        final val = double.tryParse(
+                          controller.text.replaceAll(',', '.'),
+                        );
+                        if (val != null) {
+                          dosisDiaria[day] = val;
+                          hasDosis = true;
+                        }
+                      }
+                    });
+
+                    if (!hasDosis) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Por favor selecciona un tipo de informe',
+                            'Por favor ingresa al menos una dosis diaria',
                           ),
                           backgroundColor: Colors.red,
                         ),
@@ -604,18 +614,15 @@ class _InformesScreenState extends State<InformesScreen> {
 
                     if (Navigator.canPop(context)) {
                       final retTitulo = tituloController.text.trim();
-                      final retTipo = tipoInforme ?? '';
                       final retRun = cleanRut(runMedicoController.text);
                       final retObs = observacionesController.text.trim();
-                      debugPrint(
-                        '📤 Diálogo: pop con {titulo: $retTitulo, tipo: $retTipo, run: $retRun, obs: $retObs}',
-                      );
 
-                      Navigator.pop(context, <String, String>{
+                      Navigator.pop(context, <String, dynamic>{
                         'titulo': retTitulo,
-                        'tipoInforme': retTipo,
+                        'tipoInforme': 'Control de Anticoagulación',
                         'runMedico': retRun,
                         'observaciones': retObs,
+                        'contenidoClinico': {'dosis_diaria': dosisDiaria},
                       });
                     }
                   },
@@ -1133,6 +1140,62 @@ class _InformesScreenState extends State<InformesScreen> {
                         ],
                       ),
                     ),
+                    if (informe.contenidoClinico != null) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Control de Anticoagulación',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (informe.contenidoClinico!.dosisSemanalMg !=
+                                null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Text(
+                                  'Dosis Semanal Total: ${informe.contenidoClinico!.dosisSemanalMg} mg',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            const Text(
+                              'Dosis Diaria:',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 4),
+                            ...informe.contenidoClinico!.dosisDiaria.entries
+                                .map(
+                                  (entry) => Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 2.0,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(entry.key),
+                                        Text('${entry.value} mg'),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                          ],
+                        ),
+                      ),
+                    ],
                     if (informe.observaciones != null &&
                         informe.observaciones!.isNotEmpty) ...[
                       const SizedBox(height: 16),
@@ -1304,11 +1367,20 @@ class _InformesScreenState extends State<InformesScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Informes'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Informes',
+          style: TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            letterSpacing: -0.5,
+          ),
+        ),
+        backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: false,
         automaticallyImplyLeading: false,
+        iconTheme: const IconThemeData(color: Color(0xFF1A1A1A)),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
