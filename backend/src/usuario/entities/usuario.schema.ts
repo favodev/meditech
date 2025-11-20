@@ -23,6 +23,9 @@ class DatosAnticoagulacion {
   })
   medicamento: string;
 
+  @Prop({ required: true, type: Number, default: 4 })
+  mg_por_pastilla: number; // Ej: 4 para Aceno, 5 para Warfarina
+
   @Prop({ type: RangoMetaSchema, required: true })
   rango_meta: RangoMeta; // [cite: 611-614]
 
