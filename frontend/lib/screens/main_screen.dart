@@ -4,6 +4,35 @@ import 'informes_screen.dart';
 import 'configuracion_screen.dart';
 import 'qr_scanner_screen.dart';
 
+class _InformesScreenWrapper extends StatefulWidget {
+  final String? initialFilter;
+  const _InformesScreenWrapper({super.key, this.initialFilter});
+
+  @override
+  State<_InformesScreenWrapper> createState() => _InformesScreenWrapperState();
+}
+
+class _InformesScreenWrapperState extends State<_InformesScreenWrapper> {
+  String? _currentFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentFilter = widget.initialFilter;
+  }
+
+  void updateFilter(String? filter) {
+    setState(() {
+      _currentFilter = filter;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InformesScreen(initialFilter: _currentFilter);
+  }
+}
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -15,11 +44,21 @@ class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   late TabController _tabController;
+  String? _informesFilter;
+  final GlobalKey<_InformesScreenWrapperState> _informesKey = GlobalKey();
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
+  void _navigateToInformes([String? filter]) {
+    setState(() {
+      _informesFilter = filter;
+    });
+    _informesKey.currentState?.updateFilter(filter);
+    _onItemTapped(2);
+  }
+
+  List<Widget> get _screens => [
+    HomeScreen(onNavigateToInformes: _navigateToInformes),
     const QRScannerScreen(),
-    const InformesScreen(),
+    _InformesScreenWrapper(key: _informesKey, initialFilter: _informesFilter),
     const Center(child: Text('Chat - Próximamente')),
     const ConfiguracionScreen(),
   ];

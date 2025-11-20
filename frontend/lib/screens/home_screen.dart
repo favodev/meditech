@@ -4,11 +4,11 @@ import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
-import 'informes_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final void Function([String? filter])? onNavigateToInformes;
 
+  const HomeScreen({super.key, this.onNavigateToInformes});
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -234,12 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => InformesScreen(initialFilter: filter),
-          ),
-        );
+        widget.onNavigateToInformes?.call(filter.isEmpty ? null : filter);
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -295,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_recentInformes.isNotEmpty)
               TextButton(
                 onPressed: () {
-                  DefaultTabController.of(context).animateTo(1);
+                  widget.onNavigateToInformes?.call();
                 },
                 child: const Text('Ver todos'),
               ),
