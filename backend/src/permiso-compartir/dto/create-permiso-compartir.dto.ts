@@ -24,6 +24,10 @@ class ArchivoCompartidoDto {
   @IsString()
   @IsNotEmpty()
   urlpath: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tipo: string;
 }
 
 export class CreatePermisoCompartirDto {

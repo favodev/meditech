@@ -23,6 +23,10 @@ class ArchivoPublicoDto {
   @IsString()
   @IsNotEmpty()
   urlpath: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tipo: string;
 }
 
 export class CreatePermisoPublicoDto {

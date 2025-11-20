@@ -62,7 +62,8 @@ export class PermisoPublicoService {
         nombre: archivoDto.nombre,
         formato: archivoDto.formato,
         urlpath: signedUrl,
-      });
+        tipo: archivoDto.tipo,
+      } as Archivo);
     }
 
     const informeEmbebido = {
