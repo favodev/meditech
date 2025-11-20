@@ -5,6 +5,7 @@ import { InformeController } from './informe.controller';
 import { Informe, InformeSchema } from './entities/informe.schema';
 import { StorageModule } from '@storage/storage.module';
 import { UsuarioModule } from '@modules/usuario/usuario.module';
+import { EstadisticasService } from './estadisticas.service';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { UsuarioModule } from '@modules/usuario/usuario.module';
     UsuarioModule,
   ],
   controllers: [InformeController],
-  providers: [InformeService],
+  providers: [InformeService, EstadisticasService],
   exports: [MongooseModule],
 })
 export class InformeModule {}

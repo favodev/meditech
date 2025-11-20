@@ -16,11 +16,15 @@ import { CreateInformeDto } from './dto/create-informe.dto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { TipoUsuario } from '@enums/tipo_usuario.enum';
+import { EstadisticasService } from './estadisticas.service';
 
 @Controller('informe')
 @UseGuards(AuthGuard('jwt'))
 export class InformeController {
-  constructor(private readonly informeService: InformeService) {}
+  constructor(
+    private readonly informeService: InformeService,
+    private readonly estadisticasService: EstadisticasService,
+  ) {}
 
   @Get()
   async findAll(@Request() req) {
@@ -87,5 +91,12 @@ export class InformeController {
       informeDto,
       files.files,
     );
+  }
+
+  @Get('estadisticas')
+  async getEstadisticas(@Request() req) {
+    // Devuelve el historial clínico del paciente logueado
+    // (Si es médico, tendrías que pasar el RUN del paciente por query param)
+    return this.estadisticasService.getResumenClinico(req.user.run);
   }
 }
