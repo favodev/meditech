@@ -20,9 +20,6 @@ import { PermisoPublicoModule } from '@permiso-publico/permiso-publico.module';
     UsuarioModule,
     InstitucionModule,
     AuthModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
     InformeModule,
     PermisoCompartirModule,
     StorageModule,
@@ -32,6 +29,9 @@ import { PermisoPublicoModule } from '@permiso-publico/permiso-publico.module';
     TipoInformeModule,
     TipoInstitucionModule,
     PermisoPublicoModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
   ],
 })
 export class AppModule {}
