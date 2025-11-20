@@ -36,8 +36,15 @@ class _InformesScreenState extends State<InformesScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialFilter != null) {
+    // Establecer el filtro inicial
+    if (widget.initialFilter != null && widget.initialFilter!.isNotEmpty) {
       _searchController.text = widget.initialFilter!;
+      debugPrint(
+        '🔍 InformesScreen initState con filtro: "${widget.initialFilter}"',
+      );
+    } else {
+      _searchController.text = '';
+      debugPrint('🔍 InformesScreen initState sin filtro');
     }
     _loadUserData();
     _loadInformes();
@@ -92,10 +99,19 @@ class _InformesScreenState extends State<InformesScreen> {
       if (query.isEmpty) {
         _informesFiltrados = List.from(_informes);
       } else {
+        debugPrint('🔍 Filtrando informes por: "$query"');
         _informesFiltrados = _informes.where((informe) {
-          return informe.titulo.toLowerCase().contains(query.toLowerCase()) ||
-              informe.tipoInforme.toLowerCase().contains(query.toLowerCase());
+          final matchTitulo = informe.titulo.toLowerCase().contains(
+            query.toLowerCase(),
+          );
+          final matchTipo = informe.tipoInforme.toLowerCase().contains(
+            query.toLowerCase(),
+          );
+          return matchTitulo || matchTipo;
         }).toList();
+        debugPrint(
+          '✅ Encontrados: ${_informesFiltrados.length} de ${_informes.length}',
+        );
       }
       _sortInformes();
     });

@@ -4,35 +4,6 @@ import 'informes_screen.dart';
 import 'configuracion_screen.dart';
 import 'qr_scanner_screen.dart';
 
-class _InformesScreenWrapper extends StatefulWidget {
-  final String? initialFilter;
-  const _InformesScreenWrapper({super.key, this.initialFilter});
-
-  @override
-  State<_InformesScreenWrapper> createState() => _InformesScreenWrapperState();
-}
-
-class _InformesScreenWrapperState extends State<_InformesScreenWrapper> {
-  String? _currentFilter;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentFilter = widget.initialFilter;
-  }
-
-  void updateFilter(String? filter) {
-    setState(() {
-      _currentFilter = filter;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InformesScreen(initialFilter: _currentFilter);
-  }
-}
-
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -45,20 +16,22 @@ class _MainScreenState extends State<MainScreen>
   int _selectedIndex = 0;
   late TabController _tabController;
   String? _informesFilter;
-  final GlobalKey<_InformesScreenWrapperState> _informesKey = GlobalKey();
+  Key _informesKey = UniqueKey();
 
   void _navigateToInformes([String? filter]) {
+    debugPrint('📍 MainScreen: Navegando a Informes con filtro: "$filter"');
     setState(() {
       _informesFilter = filter;
+      // Generar nueva key para forzar reconstrucción completa
+      _informesKey = UniqueKey();
     });
-    _informesKey.currentState?.updateFilter(filter);
     _onItemTapped(2);
   }
 
   List<Widget> get _screens => [
     HomeScreen(onNavigateToInformes: _navigateToInformes),
     const QRScannerScreen(),
-    _InformesScreenWrapper(key: _informesKey, initialFilter: _informesFilter),
+    InformesScreen(key: _informesKey, initialFilter: _informesFilter),
     const Center(child: Text('Chat - Próximamente')),
     const ConfiguracionScreen(),
   ];
