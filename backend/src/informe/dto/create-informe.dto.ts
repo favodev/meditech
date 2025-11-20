@@ -14,8 +14,13 @@ export class CreateInformeDto {
   @IsString()
   observaciones?: string;
 
+  @IsOptional()
   @IsRUT()
   @IsString()
-  @IsNotEmpty()
-  run_medico: string;
+  run_medico?: string;
+
+  @IsOptional()
+  @IsRUT()
+  @IsString()
+  run_paciente?: string;
 }

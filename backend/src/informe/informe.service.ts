@@ -17,7 +17,8 @@ export class InformeService {
   }
 
   async create(
-    runPaciente: string,
+    runPaciente: string, // Recibido del controller
+    runMedico: string, // Recibido del controller
     createInformeDto: CreateInformeDto,
     files?: Express.Multer.File[],
   ): Promise<Informe> {
@@ -26,7 +27,7 @@ export class InformeService {
       tipo_informe: createInformeDto.tipo_informe,
       observaciones: createInformeDto.observaciones,
       run_paciente: runPaciente,
-      run_medico: createInformeDto.run_medico,
+      run_medico: runMedico,
       archivos: [],
     });
 
