@@ -6,9 +6,44 @@ import {
   IsNumber,
   IsObject,
   ValidateNested,
+  Max,
+  Min,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { Sexo } from '@enums/sexo.enum';
+import { MedicamentoAnticoagulante } from '@enums/medicamento_anticoagulante.enum';
+
+class UpdateRangoMetaDto {
+  @IsNumber()
+  @Min(1.0)
+  @Max(5.0)
+  min: number;
+
+  @IsNumber()
+  @Min(1.5)
+  @Max(6.0)
+  max: number;
+}
+
+class UpdateDatosAnticoagulacionDto {
+  @IsEnum(MedicamentoAnticoagulante)
+  @IsString()
+  medicamento: MedicamentoAnticoagulante;
+
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpdateRangoMetaDto)
+  rango_meta: UpdateRangoMetaDto;
+
+  @IsOptional()
+  @IsString()
+  diagnostico_base?: string;
+
+  @IsOptional()
+  @IsDate()
+  @Transform(({ value }) => new Date(value))
+  fecha_inicio_tratamiento?: Date;
+}
 
 class UpdateInstitucionEmbebidaDto {
   @IsOptional()
@@ -71,4 +106,10 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   registro_mpi?: string;
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpdateDatosAnticoagulacionDto)
+  datos_anticoagulacion?: UpdateDatosAnticoagulacionDto;
 }

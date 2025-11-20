@@ -105,6 +105,9 @@ export class SeedService {
       'Licencia Médica',
       'Consentimiento Informado',
       'Certificado de Vacunación',
+
+      'Resultado INR',
+      'Calendario de Dosis',
     ];
 
     // Seed Tipos de Informe (con tildes corregidas)
@@ -117,6 +120,7 @@ export class SeedService {
       'Teleconsulta',
       'Entrega de Resultados',
       'Control o Seguimiento',
+      'Control de Anticoagulación',
     ];
 
     // Seed Tipos de Institución (con tildes corregidas)

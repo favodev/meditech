@@ -2,6 +2,38 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { TipoUsuario } from '@enums/tipo_usuario.enum';
 import { Sexo } from '@enums/sexo.enum';
+import { MedicamentoAnticoagulante } from '@enums/medicamento_anticoagulante.enum';
+
+@Schema({ _id: false })
+class RangoMeta {
+  @Prop({ required: true, type: Number })
+  min: number; // Ej: 2.0
+
+  @Prop({ required: true, type: Number })
+  max: number; // Ej: 3.0
+}
+const RangoMetaSchema = SchemaFactory.createForClass(RangoMeta);
+
+@Schema({ _id: false })
+class DatosAnticoagulacion {
+  @Prop({
+    required: true,
+    enum: Object.values(MedicamentoAnticoagulante),
+    type: String,
+  })
+  medicamento: string;
+
+  @Prop({ type: RangoMetaSchema, required: true })
+  rango_meta: RangoMeta; // [cite: 611-614]
+
+  @Prop({ required: false })
+  diagnostico_base?: string; // Ej: "Válvula Mecánica" [cite: 611-612]
+
+  @Prop({ required: false })
+  fecha_inicio_tratamiento?: Date;
+}
+const DatosAnticoagulacionSchema =
+  SchemaFactory.createForClass(DatosAnticoagulacion);
 
 @Schema({ _id: false })
 class InstitucionEmbebida {
@@ -77,6 +109,9 @@ export class Usuario extends Document {
 
   @Prop({ required: false, default: false })
   isTwoFactorEnabled?: boolean;
+
+  @Prop({ type: DatosAnticoagulacionSchema, required: false })
+  datos_anticoagulacion?: DatosAnticoagulacion;
 }
 
 export const UsuarioSchema = SchemaFactory.createForClass(Usuario);
