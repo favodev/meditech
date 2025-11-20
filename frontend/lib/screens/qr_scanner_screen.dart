@@ -320,13 +320,26 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Escanear QR'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Escanear QR',
+          style: TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            letterSpacing: -0.5,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        automaticallyImplyLeading: false,
+        iconTheme: const IconThemeData(color: Color(0xFF1A1A1A)),
       ),
       body: Stack(
         children: [
+          // Scanner
           MobileScanner(
             controller: _controller,
             onDetect: (capture) {
@@ -340,41 +353,119 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               }
             },
           ),
-          // Overlay con instrucciones
+          // Marco de escaneo
+          Center(
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFF2196F3), width: 3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Stack(
+                children: [
+                  // Esquinas decorativas
+                  Positioned(
+                    top: -3,
+                    left: -3,
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2196F3),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(17),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -3,
+                    right: -3,
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2196F3),
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(17),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -3,
+                    left: -3,
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2196F3),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(17),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -3,
+                    right: -3,
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2196F3),
+                        borderRadius: BorderRadius.only(
+                          bottomRight: Radius.circular(17),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Instrucciones
           Positioned(
-            bottom: 0,
+            bottom: 40,
             left: 0,
             right: 0,
             child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 32),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.8),
-                    Colors.transparent,
-                  ],
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: const Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.qr_code_scanner, color: Colors.white, size: 48),
-                  SizedBox(height: 12),
-                  Text(
+                  Icon(
+                    Icons.qr_code_scanner,
+                    color: const Color(0xFF2196F3),
+                    size: 40,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
                     'Apunta la cámara al código QR',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF1A1A1A),
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     'El informe se mostrará automáticamente',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
                     textAlign: TextAlign.center,
                   ),
                 ],
