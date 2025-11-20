@@ -23,7 +23,10 @@ export class JwtRefreshStrategy extends PassportStrategy(
     });
   }
 
-  validate(req: Request, payload: { sub: string; email: string }) {
+  validate(
+    req: Request,
+    payload: { sub: string; email: string; tipo_usuario: string },
+  ) {
     const authHeader = req.get('authorization');
 
     if (!authHeader) {
@@ -35,6 +38,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     return {
       userId: payload.sub,
       refreshToken,
+      tipo_usuario: payload.tipo_usuario,
     };
   }
 }

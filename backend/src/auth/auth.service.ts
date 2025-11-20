@@ -51,6 +51,7 @@ export class AuthService {
       (user._id as Types.ObjectId).toString(),
       user.email,
       user.run,
+      user.tipo_usuario,
     );
 
     await this.updateRefreshTokenHash(
@@ -111,6 +112,7 @@ export class AuthService {
       (user._id as Types.ObjectId).toString(),
       user.email,
       user.run,
+      user.tipo_usuario,
     );
 
     await this.updateRefreshTokenHash(
@@ -172,8 +174,13 @@ export class AuthService {
     });
   }
 
-  private async getTokens(userId: string, email: string, run: string) {
-    const payload = { sub: userId, email, run };
+  private async getTokens(
+    userId: string,
+    email: string,
+    run: string,
+    tipo_usuario: string,
+  ) {
+    const payload = { sub: userId, email, run, tipo_usuario };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
@@ -274,7 +281,12 @@ export class AuthService {
       throw new UnauthorizedException('Código 2FA incorrecto.');
     }
 
-    const tokens = await this.getTokens(userId, user.email, user.run);
+    const tokens = await this.getTokens(
+      userId,
+      user.email,
+      user.run,
+      user.tipo_usuario,
+    );
     await this.updateRefreshTokenHash(userId, tokens.refreshToken);
 
     return {
