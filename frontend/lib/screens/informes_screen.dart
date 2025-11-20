@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
+import '../models/tipo_informe_model.dart';
 import '../utils/rut_formatter.dart';
 import 'compartir_informe_screen.dart';
 import 'permisos_compartidos_screen.dart';
@@ -336,8 +337,22 @@ class _InformesScreenState extends State<InformesScreen> {
         return;
       }
 
+      // Fetch types
+      List<TipoInforme> tiposInforme = [];
+      try {
+        final token = await _authStorage.getToken();
+        if (token != null) {
+          tiposInforme = await _apiService.getTiposInforme(token);
+        }
+      } catch (e) {
+        debugPrint('Error fetching types: $e');
+      }
+
       // SEGUNDO: Mostrar diálogo para ingresar información del informe
-      final result = await _showInformeDialog(fileCount: files.length);
+      final result = await _showInformeDialog(
+        fileCount: files.length,
+        tiposInforme: tiposInforme,
+      );
       if (result == null) return;
 
       setState(() {
@@ -413,10 +428,24 @@ class _InformesScreenState extends State<InformesScreen> {
 
   Future<Map<String, dynamic>?> _showInformeDialog({
     required int fileCount,
+    required List<TipoInforme> tiposInforme,
   }) async {
     final tituloController = TextEditingController();
     final runMedicoController = TextEditingController();
     final observacionesController = TextEditingController();
+
+    // Default to "Control de Anticoagulación" if available, otherwise first one
+    TipoInforme? selectedTipo;
+    try {
+      selectedTipo = tiposInforme.firstWhere(
+        (t) => t.nombre == 'Control de Anticoagulación',
+        orElse: () => tiposInforme.isNotEmpty
+            ? tiposInforme.first
+            : TipoInforme(id: '', nombre: 'Otro'),
+      );
+    } catch (e) {
+      // Handle empty list
+    }
 
     // Controladores para dosis diaria
     final Map<String, TextEditingController> dosisControllers = {
@@ -434,8 +463,10 @@ class _InformesScreenState extends State<InformesScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            final isTaco = selectedTipo?.nombre == 'Control de Anticoagulación';
+
             return AlertDialog(
-              title: const Text('Nuevo Control de Anticoagulación'),
+              title: const Text('Nuevo Informe'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -466,6 +497,26 @@ class _InformesScreenState extends State<InformesScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    DropdownButtonFormField<TipoInforme>(
+                      value: selectedTipo,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de Informe *',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                      items: tiposInforme.map((tipo) {
+                        return DropdownMenuItem(
+                          value: tipo,
+                          child: Text(tipo.nombre),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          selectedTipo = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
                     const Text(
                       'Información General:',
                       style: TextStyle(
@@ -482,7 +533,7 @@ class _InformesScreenState extends State<InformesScreen> {
                         hintText: 'Ej: Control Enero 2025',
                         prefixIcon: Icon(Icons.title),
                       ),
-                      autofocus: true,
+                      autofocus: false,
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -498,50 +549,52 @@ class _InformesScreenState extends State<InformesScreen> {
                       keyboardType: TextInputType.text,
                       inputFormatters: [RutFormatter()],
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Dosis Diaria (mg):',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...dosisControllers.entries.map((entry) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 100,
-                              child: Text(
-                                entry.key,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: TextField(
-                                controller: entry.value,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  suffixText: 'mg',
-                                ),
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                              ),
-                            ),
-                          ],
+                    if (isTaco) ...[
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Dosis Diaria (mg):',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                      );
-                    }),
+                      ),
+                      const SizedBox(height: 8),
+                      ...dosisControllers.entries.map((entry) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 100,
+                                child: Text(
+                                  entry.key,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: TextField(
+                                  controller: entry.value,
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    suffixText: 'mg',
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
                     const SizedBox(height: 16),
                     TextField(
                       controller: observacionesController,
@@ -563,6 +616,17 @@ class _InformesScreenState extends State<InformesScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
+                    if (selectedTipo == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Por favor selecciona un tipo de informe',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
                     if (tituloController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -585,31 +649,36 @@ class _InformesScreenState extends State<InformesScreen> {
                       return;
                     }
 
-                    // Recolectar dosis
-                    final Map<String, double> dosisDiaria = {};
-                    bool hasDosis = false;
-                    dosisControllers.forEach((day, controller) {
-                      if (controller.text.isNotEmpty) {
-                        final val = double.tryParse(
-                          controller.text.replaceAll(',', '.'),
-                        );
-                        if (val != null) {
-                          dosisDiaria[day] = val;
-                          hasDosis = true;
-                        }
-                      }
-                    });
+                    Map<String, dynamic>? contenidoClinico;
 
-                    if (!hasDosis) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Por favor ingresa al menos una dosis diaria',
+                    if (isTaco) {
+                      // Recolectar dosis
+                      final Map<String, double> dosisDiaria = {};
+                      bool hasDosis = false;
+                      dosisControllers.forEach((day, controller) {
+                        if (controller.text.isNotEmpty) {
+                          final val = double.tryParse(
+                            controller.text.replaceAll(',', '.'),
+                          );
+                          if (val != null) {
+                            dosisDiaria[day] = val;
+                            hasDosis = true;
+                          }
+                        }
+                      });
+
+                      if (!hasDosis) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Por favor ingresa al menos una dosis diaria',
+                            ),
+                            backgroundColor: Colors.red,
                           ),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
+                        );
+                        return;
+                      }
+                      contenidoClinico = {'dosis_diaria': dosisDiaria};
                     }
 
                     if (Navigator.canPop(context)) {
@@ -619,10 +688,10 @@ class _InformesScreenState extends State<InformesScreen> {
 
                       Navigator.pop(context, <String, dynamic>{
                         'titulo': retTitulo,
-                        'tipoInforme': 'Control de Anticoagulación',
+                        'tipoInforme': selectedTipo!.nombre,
                         'runMedico': retRun,
                         'observaciones': retObs,
-                        'contenidoClinico': {'dosis_diaria': dosisDiaria},
+                        'contenidoClinico': contenidoClinico,
                       });
                     }
                   },

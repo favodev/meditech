@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import '../models/tipo_informe_model.dart';
 import 'auth_storage.dart';
 
 class ApiService {
@@ -70,6 +71,26 @@ class ApiService {
     }
 
     return response;
+  }
+
+  // Obtener tipos de informe
+  Future<List<TipoInforme>> getTiposInforme(String token) async {
+    final response = await _requestWithAutoRefresh(
+      (t) => http.get(
+        Uri.parse('$baseUrl/tipo-informe'),
+        headers: {
+          'Authorization': 'Bearer $t',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => TipoInforme.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al cargar tipos de informe');
+    }
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -849,36 +870,6 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('❌ Error al obtener tipos de archivo: $e');
-      rethrow;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getTiposInforme(String token) async {
-    try {
-      debugPrint('📥 Obteniendo tipos de informe...');
-
-      final response = await _requestWithAutoRefresh((token) async {
-        return await http.get(
-          Uri.parse('$baseUrl/tipo-informe'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        );
-      });
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        debugPrint('✅ Tipos de informe obtenidos: ${data.length}');
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(
-          error['message'] ?? 'Error al obtener tipos de informe',
-        );
-      }
-    } catch (e) {
-      debugPrint('❌ Error al obtener tipos de informe: $e');
       rethrow;
     }
   }

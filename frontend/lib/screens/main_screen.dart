@@ -60,17 +60,6 @@ class _MainScreenState extends State<MainScreen>
           physics: const NeverScrollableScrollPhysics(),
           children: _screens,
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _onItemTapped(1),
-          backgroundColor: const Color(0xFF2196F3),
-          elevation: 6,
-          child: const Icon(
-            Icons.qr_code_scanner,
-            size: 32,
-            color: Colors.white,
-          ),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: BottomAppBar(
           shape: const CircularNotchedRectangle(),
           notchMargin: 8,
@@ -132,8 +121,30 @@ class _MainScreenState extends State<MainScreen>
                     ),
                   ),
                 ),
-                // Espacio para el FAB
-                const SizedBox(width: 80),
+                // QR Scanner
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _onItemTapped(1),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.qr_code_scanner,
+                          color: const Color(0xFF2196F3),
+                        ),
+                        Text(
+                          'Escanear',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _selectedIndex == 1
+                                ? const Color(0xFF2196F3)
+                                : Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 // Chat
                 Expanded(
                   child: InkWell(
