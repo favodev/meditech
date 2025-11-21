@@ -377,6 +377,45 @@ class _InformesScreenState extends State<InformesScreen> {
         debugPrint('Error fetching types: $e');
       }
 
+      // VALIDACIÓN: Si el usuario es Paciente, verificar perfil médico antes de continuar
+      if (_currentUser!.tipoUsuario == 'Paciente') {
+        try {
+          final token = await _authStorage.getToken();
+          if (token != null) {
+            final profile = await _apiService.getUserProfile(token);
+            final datosAnticoagulacion = profile['datos_anticoagulacion'];
+
+            // Verificar si tiene configurado el tratamiento TACO
+            if (datosAnticoagulacion == null ||
+                datosAnticoagulacion['mg_por_pastilla'] == null) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      '⚠️ Para crear informes de Control de Anticoagulación (TACO), '
+                      'primero debes configurar tu tratamiento en tu perfil.',
+                    ),
+                    backgroundColor: Colors.orange,
+                    duration: const Duration(seconds: 7),
+                    action: SnackBarAction(
+                      label: 'Ir a Perfil',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/settings');
+                      },
+                    ),
+                  ),
+                );
+              }
+              return;
+            }
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error al verificar perfil médico: $e');
+          // Si hay error, permitir continuar (la validación real la hace el backend)
+        }
+      }
+
       // SEGUNDO: Mostrar diálogo para ingresar información del informe
       final result = await _showInformeDialog(
         fileCount: files.length,
