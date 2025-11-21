@@ -1461,8 +1461,11 @@ class _InformesScreenState extends State<InformesScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(entry.key),
-                                        Text('${entry.value} mg'),
+                                        Text(
+                                          entry.key[0].toUpperCase() +
+                                              entry.key.substring(1),
+                                        ),
+                                        Text('${entry.value} pastilla.'),
                                       ],
                                     ),
                                   ),
