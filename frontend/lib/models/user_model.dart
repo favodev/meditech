@@ -1,5 +1,48 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+
+class RangoMeta {
+  final double min;
+  final double max;
+
+  RangoMeta({required this.min, required this.max});
+
+  factory RangoMeta.fromJson(Map<String, dynamic> json) {
+    return RangoMeta(
+      min: (json['min'] as num).toDouble(),
+      max: (json['max'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'min': min, 'max': max};
+}
+
+class DatosAnticoagulacion {
+  final String medicamento;
+  final double mgPorPastilla;
+  final RangoMeta rangoMeta;
+
+  DatosAnticoagulacion({
+    required this.medicamento,
+    required this.mgPorPastilla,
+    required this.rangoMeta,
+  });
+
+  factory DatosAnticoagulacion.fromJson(Map<String, dynamic> json) {
+    return DatosAnticoagulacion(
+      medicamento: json['medicamento'] ?? '',
+      mgPorPastilla: (json['mg_por_pastilla'] as num?)?.toDouble() ?? 0.0,
+      rangoMeta: RangoMeta.fromJson(
+        json['rango_meta'] ?? {'min': 2.0, 'max': 3.0},
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'medicamento': medicamento,
+        'mg_por_pastilla': mgPorPastilla,
+        'rango_meta': rangoMeta.toJson(),
+      };
+}
 
 class UserModel {
   final String id;
@@ -10,6 +53,7 @@ class UserModel {
   final String accessToken;
   final String refreshToken;
   final bool isTwoFactorEnabled;
+  final DatosAnticoagulacion? datosAnticoagulacion; // <--- NUEVO CAMPO
 
   UserModel({
     required this.id,
@@ -20,6 +64,7 @@ class UserModel {
     required this.accessToken,
     required this.refreshToken,
     this.isTwoFactorEnabled = false,
+    this.datosAnticoagulacion,
   });
 
   // Decodifica el payload del JWT (sin verificar la firma)
@@ -27,14 +72,8 @@ class UserModel {
     try {
       final parts = token.split('.');
       if (parts.length != 3) return null;
-
-      // El payload es la segunda parte del JWT (base64 encoded)
       final payload = parts[1];
-
-      // Normalizar el base64 (agregar padding si es necesario)
       var normalized = base64Url.normalize(payload);
-
-      // Decodificar
       final decoded = utf8.decode(base64Url.decode(normalized));
       return jsonDecode(decoded) as Map<String, dynamic>;
     } catch (e) {
@@ -42,60 +81,29 @@ class UserModel {
     }
   }
 
-  // El backend retorna: { usuario: { id, nombre, email, tipo_usuario }, accessToken, refreshToken }
-  // NOTA: El RUN NO viene en el objeto usuario, pero SÍ está en el JWT
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    debugPrint('\n🔍 ========== UserModel.fromJson ==========');
-    debugPrint('📦 JSON recibido: $json');
-
     final usuario = json['usuario'] as Map<String, dynamic>?;
     final accessToken = json['accessToken'] ?? json['access_token'] ?? '';
-
-    debugPrint('👤 Objeto usuario: $usuario');
-    debugPrint(
-      '🔑 Access Token presente: ${accessToken.isNotEmpty ? "SÍ (${accessToken.length} chars)" : "NO"}',
-    );
 
     String run = '';
     String userId = '';
     String email = '';
 
     if (accessToken.isNotEmpty) {
-      debugPrint('🔓 Intentando decodificar JWT...');
       final jwtPayload = _decodeJwt(accessToken);
       if (jwtPayload != null) {
         run = jwtPayload['run'] ?? '';
         userId = jwtPayload['sub'] ?? '';
         email = jwtPayload['email'] ?? '';
-        debugPrint('✅ JWT decodificado exitosamente');
-        debugPrint('📋 Payload completo: $jwtPayload');
-        debugPrint('🆔 UserId del JWT: $userId');
-        debugPrint('📧 Email del JWT: $email');
-        debugPrint('🆔 RUN del JWT: ${run.isNotEmpty ? run : "❌ VACÍO"}');
-      } else {
-        debugPrint('❌ Error: No se pudo decodificar el JWT');
       }
-    } else {
-      debugPrint('⚠️ No hay access token para decodificar');
     }
 
     if (run.isEmpty) {
       final runFromUser = usuario?['run'] ?? json['run'] ?? '';
       if (runFromUser.isNotEmpty) {
         run = runFromUser;
-        debugPrint('✅ RUN encontrado en el objeto usuario: $run');
       }
     }
-
-    if (run.isEmpty) {
-      debugPrint(
-        '⚠️⚠️⚠️ ADVERTENCIA CRÍTICA: No se encontró el RUN del usuario ⚠️⚠️⚠️',
-      );
-    } else {
-      debugPrint('✅✅✅ RUN FINAL: $run ✅✅✅');
-    }
-
-    debugPrint('========================================\n');
 
     return UserModel(
       id: usuario?['id'] ?? userId ?? json['id'] ?? json['_id'] ?? '',
@@ -107,6 +115,11 @@ class UserModel {
       refreshToken: json['refreshToken'] ?? json['refresh_token'] ?? '',
       isTwoFactorEnabled:
           usuario?['isTwoFactorEnabled'] ?? json['isTwoFactorEnabled'] ?? false,
+      // Mapeo del nuevo campo clínico
+      datosAnticoagulacion:
+          usuario?['datos_anticoagulacion'] != null
+              ? DatosAnticoagulacion.fromJson(usuario!['datos_anticoagulacion'])
+              : null,
     );
   }
 
@@ -119,6 +132,7 @@ class UserModel {
         'run': run,
         'tipo_usuario': tipoUsuario,
         'isTwoFactorEnabled': isTwoFactorEnabled,
+        'datos_anticoagulacion': datosAnticoagulacion?.toJson(),
       },
       'accessToken': accessToken,
       'refreshToken': refreshToken,

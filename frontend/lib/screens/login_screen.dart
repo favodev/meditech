@@ -74,7 +74,12 @@ class _LoginScreenState extends State<LoginScreen>
       await _authStorage.saveUser(user);
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        // Lógica de redirección inteligente
+        if (user.tipoUsuario == 'Paciente' && user.datosAnticoagulacion == null) {
+           Navigator.pushReplacementNamed(context, '/onboarding-taco');
+        } else {
+           Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } catch (e) {
       if (mounted) {

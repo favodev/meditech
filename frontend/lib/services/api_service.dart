@@ -294,127 +294,95 @@ class ApiService {
     }
   }
 
-  // Crear informe con archivos
+ // Crear informe con archivos
   Future<Map<String, dynamic>> createInforme({
     required String titulo,
     required String tipoInforme,
-    required String runMedico,
+    // Parámetros opcionales para la lógica de roles
+    String? runMedico,
+    String? runPaciente,
     String? observaciones,
     Map<String, dynamic>? contenidoClinico,
     List<File>? files,
     required String token,
   }) async {
     try {
-      debugPrint('📤 Creando informe con ${files?.length ?? 0} archivo(s)');
+      debugPrint('📤 Creando informe...');
 
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/informe'),
       );
 
-      // Agregar headers con token JWT
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Agregar los datos del informe como JSON en el campo 'data'
+      // CONSTRUCCIÓN DEL JSON
+      // Nota: Usamos snake_case en las llaves para coincidir con el DTO del Backend
       final informeData = {
         'titulo': titulo,
-        'tipo_informe': tipoInforme,
-        'run_medico': runMedico,
+        'tipo_informe': tipoInforme, // Backend: @IsString() tipo_informe
+        
+        // Lógica condicional: Solo enviamos el que corresponda
+        if (runMedico != null && runMedico.isNotEmpty) 
+          'run_medico': runMedico,
+        
+        if (runPaciente != null && runPaciente.isNotEmpty) 
+          'run_paciente': runPaciente,
+        
         if (observaciones != null && observaciones.isNotEmpty)
           'observaciones': observaciones,
-        if (contenidoClinico != null) 'contenido_clinico': contenidoClinico,
+          
+        if (contenidoClinico != null) 
+          'contenido_clinico': contenidoClinico,
       };
 
+      // Empaquetar el JSON en el campo 'data'
       request.fields['data'] = jsonEncode(informeData);
 
-      debugPrint('📋 Datos del informe: $informeData');
       debugPrint('📋 JSON enviado: ${jsonEncode(informeData)}');
 
-      // Agregar los archivos con el nombre 'files' (plural)
+      // Adjuntar archivos
       if (files != null && files.isNotEmpty) {
-        debugPrint('📎 Agregando archivos al request:');
         for (var file in files) {
           final fileExtension = file.path.split('.').last.toLowerCase();
           final fileName = file.path.split(Platform.pathSeparator).last;
-
-          debugPrint('  - Archivo: $fileName');
-          debugPrint('    Path: ${file.path}');
-          debugPrint('    Existe: ${await file.exists()}');
-          debugPrint('    Tamaño: ${await file.length()} bytes');
-          debugPrint('    Extensión: $fileExtension');
-
-          // Determinar el Content-Type correcto según la extensión
+          
           MediaType contentType;
           switch (fileExtension) {
-            case 'pdf':
-              contentType = MediaType('application', 'pdf');
-              break;
-            case 'jpg':
-            case 'jpeg':
-              contentType = MediaType('image', 'jpeg');
-              break;
-            case 'png':
-              contentType = MediaType('image', 'png');
-              break;
-            case 'doc':
-              contentType = MediaType('application', 'msword');
-              break;
-            case 'docx':
-              contentType = MediaType(
-                'application',
-                'vnd.openxmlformats-officedocument.wordprocessingml.document',
-              );
-              break;
-            default:
-              contentType = MediaType('application', 'octet-stream');
+            case 'pdf': contentType = MediaType('application', 'pdf'); break;
+            case 'jpg': case 'jpeg': contentType = MediaType('image', 'jpeg'); break;
+            case 'png': contentType = MediaType('image', 'png'); break;
+            default: contentType = MediaType('application', 'octet-stream');
           }
 
-          // IMPORTANTE: El backend espera 'files' como nombre del campo
           request.files.add(
             await http.MultipartFile.fromPath(
-              'files', // ← Este nombre debe coincidir con el backend
+              'files', // Nombre del campo que espera el Interceptor de NestJS
               file.path,
               contentType: contentType,
-              filename: fileName, // ← Agregar filename explícitamente
+              filename: fileName,
             ),
           );
         }
-        debugPrint('✅ Total de archivos agregados: ${request.files.length}');
-      } else {
-        debugPrint('⚠️ No hay archivos para subir');
       }
-
-      debugPrint('📡 Enviando request a: ${request.url}');
-      debugPrint('📡 Headers: ${request.headers}');
-      debugPrint('� Fields: ${request.fields}');
-      debugPrint('📡 Files: ${request.files.map((f) => f.filename).toList()}');
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint('📥 Respuesta del servidor:');
-      debugPrint('  Status: ${response.statusCode}');
-      debugPrint('  Body: ${response.body}');
-
       if (response.statusCode == 201 || response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        debugPrint('✅ Informe creado exitosamente');
-        debugPrint('  ID del informe: ${result['_id']}');
-        debugPrint(
-          '  Archivos en respuesta: ${result['archivos']?.length ?? 0}',
-        );
+        debugPrint('✅ Informe creado. ID: ${result['_id']}');
         return result;
       } else {
         final error = jsonDecode(response.body);
-        debugPrint('❌ Error del servidor: $error');
+        debugPrint('❌ Error Backend: $error');
         throw Exception(error['message'] ?? 'Error al crear informe');
       }
     } catch (e) {
-      debugPrint('❌ Error al crear informe: $e');
+      debugPrint('❌ Excepción: $e');
       rethrow;
     }
   }
-
   // Logout
   Future<void> logout(String token) async {
     try {
@@ -461,6 +429,37 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('❌ Error al obtener informes: $e');
+      rethrow;
+    }
+  }
+
+  // Obtener estadísticas clínicas (TTR y Gráfico de INR)
+  Future<Map<String, dynamic>> getEstadisticasClinicas(String token) async {
+    try {
+      debugPrint('📥 Obteniendo estadísticas clínicas...');
+
+      final response = await _requestWithAutoRefresh((token) async {
+        return await http.get(
+          Uri.parse('$baseUrl/informe/estadisticas'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Estadísticas obtenidas exitosamente');
+        return data;
+      } else {
+        // Si el usuario no tiene datos de TACO, el backend podría devolver 404 o array vacío.
+        // Manejamos el error suavemente.
+        debugPrint('⚠️ No se pudieron cargar estadísticas: ${response.body}');
+        return {};
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener estadísticas: $e');
       rethrow;
     }
   }
@@ -875,7 +874,7 @@ class ApiService {
       debugPrint('📥 Obteniendo especialidades...');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/epecialidad'),
+        Uri.parse('$baseUrl/especialidad'),
         headers: {'Content-Type': 'application/json'},
       );
 

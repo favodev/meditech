@@ -59,10 +59,13 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
 
       if (token != null && user != null) {
-        // Hay sesión activa, ir directamente a home
-        Navigator.of(context).pushReplacementNamed('/home');
+        // Lógica de redirección inteligente
+        if (user.tipoUsuario == 'Paciente' && user.datosAnticoagulacion == null) {
+           Navigator.of(context).pushReplacementNamed('/onboarding-taco');
+        } else {
+           Navigator.of(context).pushReplacementNamed('/home');
+        }
       } else {
-        // No hay sesión, ir a login
         Navigator.of(context).pushReplacementNamed('/login');
       }
     } catch (e) {

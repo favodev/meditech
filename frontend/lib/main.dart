@@ -9,6 +9,7 @@ import 'screens/two_factor_screen.dart';
 import 'screens/setup_2fa_screen.dart';
 import 'screens/two_factor_methods_screen.dart';
 import 'screens/reset_password_screen.dart';
+import 'screens/onboarding_taco_screen.dart'; // <--- IMPORTAR
 
 void main() {
   runApp(const MyApp());
@@ -64,6 +65,7 @@ class MyApp extends StatelessWidget {
           '/change-password': (context) => const ChangePasswordScreen(),
           '/2fa-methods': (context) => const TwoFactorMethodsScreen(),
           '/setup-2fa': (context) => const Setup2FAScreen(),
+          '/onboarding-taco': (context) => const OnboardingTacoScreen(), // <--- NUEVA RUTA
         };
 
         final builder = routes[settings.name];
