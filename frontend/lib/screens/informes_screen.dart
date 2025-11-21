@@ -449,6 +449,7 @@ class _InformesScreenState extends State<InformesScreen> {
     final tituloController = TextEditingController();
     final runMedicoController = TextEditingController();
     final observacionesController = TextEditingController();
+    final inrController = TextEditingController(); // <--- NUEVO
 
     // Default to "Control de Anticoagulación" if available, otherwise first one
     TipoInforme? selectedTipo;
@@ -567,8 +568,20 @@ class _InformesScreenState extends State<InformesScreen> {
                     ),
                     if (isTaco) ...[
                       const SizedBox(height: 24),
+                      TextField(
+                        controller: inrController,
+                        decoration: const InputDecoration(
+                          labelText: 'INR Actual (Ej: 2.5) *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.speed),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       const Text(
-                        'Dosis Diaria (mg):',
+                        'Dosis Diaria (Cantidad de pastillas):',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -598,12 +611,10 @@ class _InformesScreenState extends State<InformesScreen> {
                                       horizontal: 12,
                                       vertical: 8,
                                     ),
-                                    suffixText: 'mg',
+                                    hintText: 'Ej: 1/2, 1, 1.5',
+                                    suffixText: 'comp.',
                                   ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
+                                  keyboardType: TextInputType.text,
                                 ),
                               ),
                             ],
@@ -668,18 +679,34 @@ class _InformesScreenState extends State<InformesScreen> {
                     Map<String, dynamic>? contenidoClinico;
 
                     if (isTaco) {
+                      // Validar INR
+                      if (inrController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Debes ingresar el INR actual'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
                       // Recolectar dosis
-                      final Map<String, double> dosisDiaria = {};
+                      final Map<String, String> dosisDiaria =
+                          {}; // Cambiar a String para soportar "1/4"
                       bool hasDosis = false;
                       dosisControllers.forEach((day, controller) {
                         if (controller.text.isNotEmpty) {
-                          final val = double.tryParse(
-                            controller.text.replaceAll(',', '.'),
-                          );
-                          if (val != null) {
-                            dosisDiaria[day] = val;
-                            hasDosis = true;
-                          }
+                          // Convertir la clave a minúsculas y quitar tildes
+                          String key = day
+                              .toLowerCase()
+                              .replaceAll('á', 'a')
+                              .replaceAll('é', 'e')
+                              .replaceAll('í', 'i')
+                              .replaceAll('ó', 'o')
+                              .replaceAll('ú', 'u');
+
+                          dosisDiaria[key] = controller.text.trim();
+                          hasDosis = true;
                         }
                       });
 
@@ -694,7 +721,15 @@ class _InformesScreenState extends State<InformesScreen> {
                         );
                         return;
                       }
-                      contenidoClinico = {'dosis_diaria': dosisDiaria};
+
+                      contenidoClinico = {
+                        'inr_actual':
+                            double.tryParse(
+                              inrController.text.replaceAll(',', '.'),
+                            ) ??
+                            0.0,
+                        'dosis_diaria': dosisDiaria,
+                      };
                     }
 
                     if (Navigator.canPop(context)) {
