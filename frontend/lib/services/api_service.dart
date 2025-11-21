@@ -774,8 +774,6 @@ class ApiService {
     }
   }
 
-  // ===== PERMISO PÚBLICO (para QR) =====
-
   Future<Map<String, dynamic>> createPermisoPublico({
     required String informeId,
     required String token,
@@ -842,8 +840,6 @@ class ApiService {
     }
   }
 
-  // ===== TIPOS DE ARCHIVO =====
-
   Future<List<Map<String, dynamic>>> getTiposArchivo(String token) async {
     try {
       debugPrint('📥 Obteniendo tipos de archivo...');
@@ -897,8 +893,6 @@ class ApiService {
     }
   }
 
-  // ===== TIPOS DE INSTITUCIÓN =====
-
   Future<List<Map<String, dynamic>>> getTiposInstitucion() async {
     try {
       debugPrint('📥 Obteniendo tipos de institución...');
@@ -924,9 +918,6 @@ class ApiService {
     }
   }
 
-  // ===== AUTENTICACIÓN DE DOS FACTORES (2FA) =====
-
-  /// Configurar 2FA (generar QR code)
   Future<Map<String, dynamic>> setup2FA(String token) async {
     try {
       debugPrint('📤 Configurando 2FA...');
@@ -1010,6 +1001,50 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('❌ Error en login 2FA: $e');
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<void> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final error = jsonDecode(response.body);
+        throw Exception(
+          error['message'] ?? 'Error al solicitar recuperación de contraseña',
+        );
+      }
+    } catch (e) {
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<void> resetPassword(String token, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'token': token, 'newPassword': newPassword}),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final error = jsonDecode(response.body);
+        throw Exception(
+          error['message'] ?? 'Error al restablecer la contraseña',
+        );
+      }
+    } catch (e) {
       if (e.toString().contains('Exception:')) {
         rethrow;
       }

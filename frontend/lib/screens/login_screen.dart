@@ -94,6 +94,121 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _showForgotPasswordDialog() async {
+    final emailController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool isLoading = false;
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('Recuperar contraseña'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Ingresa tu correo electrónico para recibir las instrucciones de recuperación.',
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (emailController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Por favor ingresa tu email'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        setState(() => isLoading = true);
+
+                        try {
+                          await _apiService.forgotPassword(
+                            emailController.text.trim(),
+                          );
+                          Navigator.pop(dialogContext, true);
+                        } catch (e) {
+                          setState(() => isLoading = false);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e.toString().replaceAll('Exception: ', ''),
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2196F3),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Enviar'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    final email = emailController.text.trim();
+    emailController.dispose();
+
+    if (result == true && mounted) {
+      // Navegar a la pantalla de reset password
+      Navigator.pushNamed(
+        context,
+        '/reset-password',
+        arguments: {'email': email},
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -272,6 +387,21 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ],
+                      ),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _showForgotPasswordDialog,
+                          child: Text(
+                            '¿Olvidaste tu contraseña?',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
                       ),
 
                       const SizedBox(height: 48),

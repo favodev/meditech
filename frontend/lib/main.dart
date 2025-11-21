@@ -8,6 +8,7 @@ import 'screens/change_password_screen.dart';
 import 'screens/two_factor_screen.dart';
 import 'screens/setup_2fa_screen.dart';
 import 'screens/two_factor_methods_screen.dart';
+import 'screens/reset_password_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,6 +33,20 @@ class MyApp extends StatelessWidget {
             settings: settings,
             pageBuilder: (context, animation, secondaryAnimation) =>
                 TwoFactorScreen(tempToken: args?['tempToken'] ?? ''),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+            transitionDuration: const Duration(milliseconds: 500),
+          );
+        }
+
+        if (settings.name == '/reset-password') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return PageRouteBuilder(
+            settings: settings,
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                ResetPasswordScreen(email: args?['email'] ?? ''),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
                   return FadeTransition(opacity: animation, child: child);
