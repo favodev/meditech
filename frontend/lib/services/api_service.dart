@@ -923,7 +923,7 @@ class ApiService {
       debugPrint('📥 Obteniendo especialidades...');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/epecialidad'),
+        Uri.parse('$baseUrl/especialidad'),
         headers: {'Content-Type': 'application/json'},
       );
 
