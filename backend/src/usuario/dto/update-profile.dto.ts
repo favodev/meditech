@@ -30,10 +30,9 @@ class UpdateDatosAnticoagulacionDto {
   @IsString()
   medicamento: MedicamentoAnticoagulante;
 
-  // --- NUEVO CAMPO ---
   @IsNumber()
-  @Min(0.5) // Hay pastillas de 0.5mg o 1mg en casos raros
-  @Max(10) // Rara vez pasan de 5mg o 10mg
+  @Min(0.5)
+  @Max(10)
   mg_por_pastilla: number;
 
   @IsObject()

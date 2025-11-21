@@ -3,9 +3,6 @@ import { Document, Types } from 'mongoose';
 import { NivelAcceso } from '@enums/nivel_acceso.enum';
 import { Archivo, ArchivoSchema } from '@informe/entities/informe.schema';
 
-// ==========================================
-// Sub-Schema: Calendario de Dosis (Visual)
-// ==========================================
 @Schema({ _id: false })
 class CalendarioDosis {
   @Prop({ type: String }) lunes: string;
@@ -18,9 +15,6 @@ class CalendarioDosis {
 }
 const CalendarioDosisSchema = SchemaFactory.createForClass(CalendarioDosis);
 
-// ==========================================
-// Sub-Schema: Contenido Clínico (TACO)
-// ==========================================
 @Schema({ _id: false })
 class ContenidoClinico {
   @Prop({ type: Number })

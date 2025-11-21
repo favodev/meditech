@@ -40,7 +40,6 @@ export class SeedService {
       this.informeModel.deleteMany({}),
     ]);
 
-    // Seed Especialidades (con tildes corregidas)
     const especialidades = [
       'Cardiología',
       'Dermatología',
@@ -94,7 +93,6 @@ export class SeedService {
       'Neurocirugía',
     ];
 
-    // Seed Tipos de Archivo (con tildes corregidas)
     const tiposArchivo = [
       'Examen de Laboratorio',
       'Examen de Imagenología',
@@ -110,7 +108,6 @@ export class SeedService {
       'Calendario de Dosis',
     ];
 
-    // Seed Tipos de Informe (con tildes corregidas)
     const tiposInforme = [
       'Consulta General',
       'Consulta de Especialidad',
@@ -123,7 +120,6 @@ export class SeedService {
       'Control de Anticoagulación',
     ];
 
-    // Seed Tipos de Institución (con tildes corregidas)
     const tiposInstitucion = [
       'Hospital Público',
       'CESFAM',
@@ -149,7 +145,6 @@ export class SeedService {
       'Central de Abastecimiento',
     ];
 
-    // Seed Instituciones (hospitales, clínicas, centros médicos, etc.)
     const instituciones = [
       {
         nombre: 'Hospital Dr. Sotero del Rio',
@@ -430,7 +425,6 @@ export class SeedService {
       { nombre: 'Hospital de Curacavi', tipo_institucion: 'Hospital Público' },
     ];
 
-    // Insertar todos los datos
     const [
       especialidadesCreadas,
       tiposArchivoCreados,
@@ -453,7 +447,6 @@ export class SeedService {
       this.institucionModel.insertMany(instituciones),
     ]);
 
-    // Crear usuarios de prueba
     const passwordHash = await bcrypt.hash('password123', 10);
     const usuario1 = new this.usuarioModel({
       tipo_usuario: 'Paciente',
@@ -512,7 +505,6 @@ export class SeedService {
 
     await Promise.all([usuario1.save(), usuario2.save(), usuario3.save()]);
 
-    // Crear informes de prueba
     const informe1 = new this.informeModel({
       _id: '6904fb1ede6d2dd2ff3391ad',
       titulo: 'Test',

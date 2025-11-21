@@ -10,7 +10,6 @@ import {
 import { Type } from 'class-transformer';
 import { NivelAcceso } from '@enums/nivel_acceso.enum';
 
-// DTO para el sub-documento de archivo
 class ArchivoPublicoDto {
   @IsString()
   @IsNotEmpty()

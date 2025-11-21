@@ -303,12 +303,10 @@ export class AuthService {
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.userModel.findOne({ email: dto.email });
 
-    // Por seguridad, respondemos éxito aunque el email no exista
     if (!user) {
       return { message: 'Si el correo existe, se ha enviado un enlace.' };
     }
 
-    // Generar token
     const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
     const resetTokenHash = crypto
       .createHash('sha256')
@@ -316,11 +314,10 @@ export class AuthService {
       .digest('hex');
 
     user.passwordResetToken = resetTokenHash;
-    user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     await user.save();
 
-    // 2. ENVIAR EL CORREO REAL
     try {
       await this.mailService.sendMail({
         to: user.email,
@@ -348,35 +345,27 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    // 1. Hasheamos el token que recibimos para poder buscarlo en la BD
-    // (Usamos crypto aquí porque necesitamos un hash determinista para la búsqueda)
     const hashedToken = crypto
       .createHash('sha256')
       .update(dto.token)
       .digest('hex');
 
-    // 2. Buscamos al usuario que tenga ese token Y que no haya expirado
     const user = await this.userModel.findOne({
       passwordResetToken: hashedToken,
-      passwordResetExpires: { $gt: Date.now() }, // Debe ser mayor a "ahora"
+      passwordResetExpires: { $gt: Date.now() },
     });
 
     if (!user) {
       throw new UnauthorizedException('El token es inválido o ha expirado.');
     }
 
-    // 3. AQUÍ USAMOS BCRYPT (Tu librería)
-    // Encriptamos la nueva contraseña igual que en el registro
     const newPasswordHash = await bcrypt.hash(dto.newPassword, 10);
 
-    // 4. Actualizamos el usuario
     user.password_hash = newPasswordHash;
 
-    // 5. Limpiamos los campos de recuperación (para que el token no se use 2 veces)
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
 
-    // Opcional: Invalidar sesiones abiertas cambiando el refresh token
     user.currentHashedRefreshToken = undefined;
 
     await user.save();

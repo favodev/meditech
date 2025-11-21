@@ -55,11 +55,8 @@ export class InformeController {
     let runMedicoFinal: string;
 
     if (usuario.tipo_usuario === TipoUsuario.PACIENTE) {
-      // CASO 1: Soy PACIENTE
-      // El dueño soy yo (Token)
       runPacienteFinal = usuario.run;
 
-      // El otro es el médico (DTO)
       if (!informeDto.run_medico) {
         throw new BadRequestException(
           'Si eres paciente, debes indicar el RUN del médico.',
@@ -68,8 +65,6 @@ export class InformeController {
 
       runMedicoFinal = informeDto.run_medico;
     } else if (usuario.tipo_usuario === TipoUsuario.MEDICO) {
-      // CASO 2: Soy MÉDICO
-      // El dueño es el otro (DTO)
       if (!informeDto.run_paciente) {
         throw new BadRequestException(
           'Si eres médico, debes indicar el RUN del paciente.',
@@ -77,7 +72,6 @@ export class InformeController {
       }
       runPacienteFinal = informeDto.run_paciente;
 
-      // El médico soy yo (Token)
       runMedicoFinal = usuario.run;
     } else {
       throw new BadRequestException(
@@ -95,8 +89,6 @@ export class InformeController {
 
   @Get('estadisticas')
   async getEstadisticas(@Request() req) {
-    // Devuelve el historial clínico del paciente logueado
-    // (Si es médico, tendrías que pasar el RUN del paciente por query param)
     return this.estadisticasService.getResumenClinico(req.user.run);
   }
 }

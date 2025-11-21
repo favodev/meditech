@@ -40,16 +40,14 @@ export class InformeService {
         );
       }
 
-      // A. Calcular la Dosis Semanal Total (Mg)
       const dosisSemanalMg = await this.calcularDosisSemanal(
         runPaciente,
         dto.contenido_clinico.dosis_diaria,
       );
 
-      // B. Asignar los datos calculados al documento
       informeData.contenido_clinico = {
         ...dto.contenido_clinico,
-        dosis_semanal_total_mg: dosisSemanalMg, // <--- DATO CALCULADO
+        dosis_semanal_total_mg: dosisSemanalMg,
       };
     }
 
@@ -82,25 +80,20 @@ export class InformeService {
     return informeData.save();
   }
 
-  // --- MÉTODO PRIVADO: CALCULADORA DE DOSIS ---
   private async calcularDosisSemanal(
     runPaciente: string,
     calendario: any,
   ): Promise<number> {
-    // 1. Buscar al paciente para saber qué pastilla toma
     const paciente = await this.userModel.findOne({ run: runPaciente }).exec();
 
     if (!paciente || !paciente.datos_anticoagulacion) {
-      // Si no tiene configuración, asumimos el estándar de seguridad (4mg Aceno)
-      // O lanzamos error obligándolo a configurarse. Por seguridad, mejor lanzamos error.
       throw new BadRequestException(
         'El paciente no tiene configurado su tratamiento de anticoagulación.',
       );
     }
 
-    const mgBase = paciente.datos_anticoagulacion.mg_por_pastilla || 4; // Default seguro
+    const mgBase = paciente.datos_anticoagulacion.mg_por_pastilla || 4;
 
-    // 2. Sumar las fracciones
     let sumaFracciones = 0;
     const dias = [
       'lunes',
@@ -113,15 +106,13 @@ export class InformeService {
     ];
 
     for (const dia of dias) {
-      const instruccion = calendario[dia]; // Ej: "1/2", "1", "1/4", "0"
+      const instruccion = calendario[dia];
       sumaFracciones += this.fraccionANumero(instruccion);
     }
 
-    // 3. Retornar total en mg
     return sumaFracciones * mgBase;
   }
 
-  // Helper para convertir "1/2" a 0.5
   private fraccionANumero(texto: string): number {
     if (!texto) return 0;
     const limpio = texto.trim();
@@ -132,7 +123,6 @@ export class InformeService {
     if (limpio === '1') return 1;
     if (limpio === '0' || limpio.toLowerCase() === 'sin dosis') return 0;
 
-    // Intento de parseo genérico por si mandan "1.5"
     const numero = parseFloat(limpio);
     return isNaN(numero) ? 0 : numero;
   }

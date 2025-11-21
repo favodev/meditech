@@ -19,13 +19,11 @@ export class EstadisticasService {
   ) {}
 
   async getResumenClinico(runPaciente: string) {
-    // 1. Obtener el Rango Meta del Paciente (Para saber qué es "bueno")
     const paciente = await this.userModel.findOne({ run: runPaciente }).exec();
     let rangoMin: number;
     let rangoMax: number;
 
     if (!paciente || !paciente.datos_anticoagulacion) {
-      // Valores por defecto si no está configurado (Estándar médico)
       rangoMin = 2.0;
       rangoMax = 3.0;
     } else {
@@ -33,25 +31,22 @@ export class EstadisticasService {
       rangoMax = paciente.datos_anticoagulacion.rango_meta.max;
     }
 
-    // 2. Buscar historial de INR (Ordenado por fecha ASCENDENTE)
     const informes = await this.informeModel
       .find({
         run_paciente: runPaciente,
-        tipo_informe: 'Control de Anticoagulación', // Solo nos sirven estos
-        'contenido_clinico.inr_actual': { $exists: true }, // Que tengan dato
+        tipo_informe: 'Control de Anticoagulación',
+        'contenido_clinico.inr_actual': { $exists: true },
       })
-      .sort({ createdAt: 1 }) // Orden cronológico vital para Rosendaal
-      .select('createdAt contenido_clinico.inr_actual') // Solo traemos lo necesario
+      .sort({ createdAt: 1 })
+      .select('createdAt contenido_clinico.inr_actual')
       .lean<InformeConTimestamps[]>()
       .exec();
 
-    // 3. Mapear a formato ligero para el gráfico
     const historial = informes
       .filter((inf) => inf.contenido_clinico?.inr_actual !== undefined)
       .map((inf) => ({
         fecha: inf.createdAt,
         inr: inf.contenido_clinico!.inr_actual!,
-        // Flag visual para el frontend
         estado:
           inf.contenido_clinico!.inr_actual! < rangoMin
             ? 'bajo'
@@ -60,7 +55,6 @@ export class EstadisticasService {
               : 'meta',
       }));
 
-    // 4. Calcular TTR (La Nota de Calidad)
     const ttr = this.calcularRosendaalTTR(historial, rangoMin, rangoMax);
 
     return {
@@ -71,33 +65,28 @@ export class EstadisticasService {
     };
   }
 
-  // --- ALGORITMO DE ROSENDAAL (Matemática) ---
   private calcularRosendaalTTR(
     historial: any[],
     min: number,
     max: number,
   ): number {
-    if (historial.length < 2) return 0; // Necesitamos al menos 2 puntos para trazar una línea
+    if (historial.length < 2) return 0;
 
     let totalDias = 0;
     let diasEnRango = 0;
 
-    // Iteramos entre cada par de controles consecutivos
     for (let i = 0; i < historial.length - 1; i++) {
       const control1 = historial[i];
       const control2 = historial[i + 1];
 
-      // Diferencia de tiempo en días
       const diffTime = control2.fecha.getTime() - control1.fecha.getTime();
       const diasIntervalo = diffTime / (1000 * 3600 * 24);
 
       if (diasIntervalo <= 0) continue;
 
-      // Interpolación Lineal
       const inrInicial = control1.inr;
       const inrFinal = control2.inr;
 
-      // Caso 1: Ambos están dentro del rango (Todo el intervalo cuenta)
       if (
         inrInicial >= min &&
         inrInicial <= max &&
@@ -105,20 +94,14 @@ export class EstadisticasService {
         inrFinal <= max
       ) {
         diasEnRango += diasIntervalo;
-      }
-      // Caso 2: Ambos están fuera del mismo lado (Ningún día cuenta)
-      else if (
+      } else if (
         (inrInicial < min && inrFinal < min) ||
         (inrInicial > max && inrFinal > max)
       ) {
         diasEnRango += 0;
-      }
-      // Caso 3: La línea cruza el rango (Matemática de intersección)
-      else {
-        // Calculamos la pendiente de la línea
+      } else {
         const cambioPorDia = (inrFinal - inrInicial) / diasIntervalo;
 
-        // Sumamos paso a paso (aproximación por día) para robustez
         let inrActual = inrInicial;
         for (let d = 0; d < diasIntervalo; d++) {
           if (inrActual >= min && inrActual <= max) {
@@ -133,7 +116,6 @@ export class EstadisticasService {
 
     if (totalDias === 0) return 0;
 
-    // Retornamos porcentaje redondeado
     return Math.round((diasEnRango / totalDias) * 100);
   }
 }
