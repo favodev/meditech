@@ -59,6 +59,7 @@ class UserModel {
     String run = '';
     String userId = '';
     String email = '';
+    String roleFromJwt = ''; // Nueva variable
 
     if (accessToken.isNotEmpty) {
       debugPrint('🔓 Intentando decodificar JWT...');
@@ -67,11 +68,15 @@ class UserModel {
         run = jwtPayload['run'] ?? '';
         userId = jwtPayload['sub'] ?? '';
         email = jwtPayload['email'] ?? '';
+        roleFromJwt = jwtPayload['tipo_usuario'] ?? ''; // Extraer rol
         debugPrint('✅ JWT decodificado exitosamente');
         debugPrint('📋 Payload completo: $jwtPayload');
         debugPrint('🆔 UserId del JWT: $userId');
         debugPrint('📧 Email del JWT: $email');
         debugPrint('🆔 RUN del JWT: ${run.isNotEmpty ? run : "❌ VACÍO"}');
+        debugPrint(
+          '👔 Rol del JWT: ${roleFromJwt.isNotEmpty ? roleFromJwt : "❌ VACÍO"}',
+        );
       } else {
         debugPrint('❌ Error: No se pudo decodificar el JWT');
       }
@@ -102,7 +107,9 @@ class UserModel {
       nombre: usuario?['nombre'] ?? json['nombre'] ?? '',
       email: usuario?['email'] ?? email ?? json['email'] ?? '',
       run: run,
-      tipoUsuario: usuario?['tipo_usuario'] ?? json['tipo_usuario'] ?? '',
+      // Prioridad: Objeto Usuario > JWT > JSON raíz
+      tipoUsuario:
+          usuario?['tipo_usuario'] ?? roleFromJwt ?? json['tipo_usuario'] ?? '',
       accessToken: accessToken,
       refreshToken: json['refreshToken'] ?? json['refresh_token'] ?? '',
       isTwoFactorEnabled:

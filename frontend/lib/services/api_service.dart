@@ -7,11 +7,20 @@ import '../models/tipo_informe_model.dart';
 import 'auth_storage.dart';
 
 class ApiService {
-  static const String baseUrl =
-      'https://api-meditech-285055742691.southamerica-west1.run.app';
+  // Detecta automáticamente si estás en emulador Android (10.0.2.2) o producción
+  static String get baseUrl {
+    if (kReleaseMode) {
+      return 'https://api-meditech-285055742691.southamerica-west1.run.app';
+    } else {
+      // IP para emulador Android local.
+      // Usa 'localhost' si pruebas en iOS/Web, o tu IP de LAN para dispositivo físico.
+      return 'https://api-meditech-285055742691.southamerica-west1.run.app';
+      // return 'http://10.0.2.2:3000'; // Descomentar para desarrollo local
+    }
+  }
 
   final AuthStorage _authStorage = AuthStorage();
-  bool _isRefreshing = false;
+  Future<void>? _refreshFuture;
 
   /// Ejecuta una petición HTTP con auto-refresh de token en caso de 401
   Future<http.Response> _requestWithAutoRefresh(
@@ -22,55 +31,59 @@ class ApiService {
       throw Exception('No hay token de autenticación');
     }
 
-    // Intentar la petición original
-    http.Response response = await request(token);
+    // Si ya se está refrescando, esperar a que termine antes de hacer la primera llamada
+    if (_refreshFuture != null) {
+      await _refreshFuture;
+      token = await _authStorage.getToken(); // Obtener el nuevo token
+    }
 
-    // Si recibimos 401 (Unauthorized), intentar renovar el token
-    if (response.statusCode == 401 && !_isRefreshing) {
-      _isRefreshing = true;
+    http.Response response = await request(token!);
+
+    if (response.statusCode == 401) {
+      // Si no hay un refresh en proceso, iniciarlo
+      if (_refreshFuture == null) {
+        debugPrint('🔄 Token expirado, iniciando renovación...');
+        _refreshFuture = _refreshTokenFlow(); // Guardar la promesa
+      }
+
       try {
-        debugPrint('🔄 Token expirado, renovando...');
-
-        final refreshToken = await _authStorage.getRefreshToken();
-        if (refreshToken == null) {
-          throw Exception('No hay refresh token');
-        }
-
-        // Renovar el token
-        final refreshResponse = await http.get(
-          Uri.parse('$baseUrl/refresh'),
-          headers: {'Authorization': 'Bearer $refreshToken'},
-        );
-
-        if (refreshResponse.statusCode == 200) {
-          final data = jsonDecode(refreshResponse.body);
-          final newToken = data['accessToken'] as String;
-          final newRefreshToken = data['refreshToken'] as String;
-
-          // Guardar los nuevos tokens
-          await _authStorage.updateTokens(newToken, newRefreshToken);
-
-          debugPrint('✅ Token renovado exitosamente');
-
-          // Reintentar la petición original con el nuevo token
-          response = await request(newToken);
-        } else {
-          debugPrint('❌ Error al renovar token: ${refreshResponse.statusCode}');
-          throw Exception(
-            'Sesión expirada, por favor inicia sesión nuevamente',
-          );
+        await _refreshFuture; // Esperar a que termine (sea el mío o uno existente)
+        final newToken = await _authStorage.getToken();
+        if (newToken != null) {
+          response = await request(newToken); // Reintentar con token nuevo
         }
       } catch (e) {
-        debugPrint('❌ Error en auto-refresh: $e');
-        // Limpiar tokens si falla el refresh
+        // Si falla el refresh, logout
         await _authStorage.logout();
         rethrow;
       } finally {
-        _isRefreshing = false;
+        _refreshFuture = null; // Limpiar el futuro al terminar
       }
     }
 
     return response;
+  }
+
+  // Método auxiliar para la lógica de refresh
+  Future<void> _refreshTokenFlow() async {
+    final refreshToken = await _authStorage.getRefreshToken();
+    if (refreshToken == null) throw Exception('No hay refresh token');
+
+    final refreshResponse = await http.get(
+      Uri.parse('$baseUrl/refresh'),
+      headers: {'Authorization': 'Bearer $refreshToken'},
+    );
+
+    if (refreshResponse.statusCode == 200) {
+      final data = jsonDecode(refreshResponse.body);
+      await _authStorage.updateTokens(
+        data['accessToken'],
+        data['refreshToken'],
+      );
+      debugPrint('✅ Token renovado exitosamente');
+    } else {
+      throw Exception('Sesión expirada');
+    }
   }
 
   // Obtener tipos de informe
@@ -192,6 +205,34 @@ class ApiService {
         rethrow;
       }
       throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Obtener estadísticas del paciente (TTR, Rango Meta)
+  Future<Map<String, dynamic>> getEstadisticas(String token) async {
+    try {
+      debugPrint('📥 Obteniendo estadísticas clínicas...');
+      final response = await http.get(
+        Uri.parse('$baseUrl/informe/estadisticas'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Estadísticas obtenidas');
+        return data;
+      } else {
+        debugPrint(
+          '⚠️ No se pudieron cargar estadísticas: ${response.statusCode}',
+        );
+        return {};
+      }
+    } catch (e) {
+      debugPrint('❌ Error al obtener estadísticas: $e');
+      return {};
     }
   }
 

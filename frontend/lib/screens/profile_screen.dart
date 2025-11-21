@@ -26,11 +26,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _telefonoConsultorioController = TextEditingController();
   final _aniosExperienciaController = TextEditingController();
   final _registroMpiController = TextEditingController();
+  // Controladores TACO
+  final _rangoMinController = TextEditingController();
+  final _rangoMaxController = TextEditingController();
+  final _mgPastillaController = TextEditingController();
 
   String? _tipoUsuario;
   String? _sexo;
   String? _especialidad;
   DateTime? _fechaNacimiento;
+  String? _medicamentoSeleccionado;
 
   @override
   void initState() {
@@ -48,6 +53,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _telefonoConsultorioController.dispose();
     _aniosExperienciaController.dispose();
     _registroMpiController.dispose();
+    _rangoMinController.dispose();
+    _rangoMaxController.dispose();
+    _mgPastillaController.dispose();
     super.dispose();
   }
 
@@ -77,6 +85,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               profile['telefono_emergencia'] ?? '';
           if (profile['fecha_nacimiento'] != null) {
             _fechaNacimiento = DateTime.parse(profile['fecha_nacimiento']);
+          }
+
+          // Cargar datos TACO
+          if (profile['datos_anticoagulacion'] != null) {
+            final datos = profile['datos_anticoagulacion'];
+            _medicamentoSeleccionado = datos['medicamento'];
+            _mgPastillaController.text =
+                datos['mg_por_pastilla']?.toString() ?? '';
+            if (datos['rango_meta'] != null) {
+              _rangoMinController.text =
+                  datos['rango_meta']['min']?.toString() ?? '';
+              _rangoMaxController.text =
+                  datos['rango_meta']['max']?.toString() ?? '';
+            }
           }
         }
 
@@ -133,6 +155,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         if (_fechaNacimiento != null) {
           updates['fecha_nacimiento'] = _fechaNacimiento!.toIso8601String();
+        }
+
+        // Guardar datos TACO
+        if (_medicamentoSeleccionado != null &&
+            _rangoMinController.text.isNotEmpty &&
+            _rangoMaxController.text.isNotEmpty) {
+          updates['datos_anticoagulacion'] = {
+            'medicamento': _medicamentoSeleccionado,
+            'mg_por_pastilla':
+                double.tryParse(
+                  _mgPastillaController.text.replaceAll(',', '.'),
+                ) ??
+                4.0,
+            'rango_meta': {
+              'min':
+                  double.tryParse(
+                    _rangoMinController.text.replaceAll(',', '.'),
+                  ) ??
+                  2.0,
+              'max':
+                  double.tryParse(
+                    _rangoMaxController.text.replaceAll(',', '.'),
+                  ) ??
+                  3.0,
+            },
+          };
         }
       }
 
@@ -420,6 +468,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       keyboardType: TextInputType.phone,
                     ),
+
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Tratamiento Anticoagulante (TACO)',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    DropdownButtonFormField<String>(
+                      value: _medicamentoSeleccionado,
+                      decoration: const InputDecoration(
+                        labelText: 'Medicamento',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.medication),
+                      ),
+                      items: ['Acenocumarol', 'Warfarina', 'Otro']
+                          .map(
+                            (m) => DropdownMenuItem(value: m, child: Text(m)),
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setState(() => _medicamentoSeleccionado = v),
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _rangoMinController,
+                            decoration: const InputDecoration(
+                              labelText: 'INR Mínimo (Ej: 2.0)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextField(
+                            controller: _rangoMaxController,
+                            decoration: const InputDecoration(
+                              labelText: 'INR Máximo (Ej: 3.0)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: _mgPastillaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mg por pastilla (Ej: 4)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.medical_information),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
                   ],
 
                   // Campos específicos de MÉDICO
@@ -575,7 +687,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
-    // Mostrar diálogo de confirmación
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -599,10 +710,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (confirm == true) {
-      // Eliminar datos de sesión
+      try {
+        final token = await _authStorage.getToken();
+        if (token != null) {
+          await _apiService.logout(token);
+        }
+      } catch (e) {
+        debugPrint('Error en logout remoto (no crítico): $e');
+      }
+
       await _authStorage.logout();
 
-      // Navegar a login y eliminar todas las rutas anteriores
       if (mounted) {
         Navigator.of(
           context,

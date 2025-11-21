@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 
 class ConfiguracionScreen extends StatefulWidget {
@@ -9,6 +10,7 @@ class ConfiguracionScreen extends StatefulWidget {
 }
 
 class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
+  final ApiService _apiService = ApiService();
   final AuthStorage _authStorage = AuthStorage();
   bool _is2FAEnabled = false;
   bool _isLoading = true;
@@ -227,9 +229,13 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                                   Navigator.pop(dialogContext, false),
                               child: const Text('Cancelar'),
                             ),
-                            TextButton(
+                            ElevatedButton(
                               onPressed: () =>
                                   Navigator.pop(dialogContext, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('Cerrar Sesión'),
                             ),
                           ],
@@ -237,9 +243,25 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                       );
 
                       if (confirm == true) {
+                        // 1. Intentar invalidar sesión en el servidor (Backend)
+                        try {
+                          final token = await _authStorage.getToken();
+                          if (token != null) {
+                            await _apiService.logout(
+                              token,
+                            ); // Llamada al backend
+                          }
+                        } catch (e) {
+                          debugPrint('Error en logout remoto (no crítico): $e');
+                        }
+
+                        // 2. Eliminar datos locales
                         await _authStorage.logout();
+
                         if (mounted) {
-                          Navigator.pushReplacementNamed(context, '/login');
+                          Navigator.of(
+                            context,
+                          ).pushNamedAndRemoveUntil('/login', (route) => false);
                         }
                       }
                     },

@@ -69,9 +69,23 @@ class _LoginScreenState extends State<LoginScreen>
         return;
       }
 
-      // Login normal sin 2FA - guardar usuario y tokens
-      final user = UserModel.fromJson(response);
+      // === CORRECCIÓN: Obtener perfil completo antes de guardar ===
+      final accessToken = response['accessToken'];
+      final refreshToken = response['refreshToken'];
+
+      // 1. Pedir datos del usuario al backend usando el token nuevo
+      final userProfile = await _apiService.getUserProfile(accessToken);
+
+      // 2. Construir el objeto completo
+      final loginData = {
+        'usuario': userProfile,
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
+
+      final user = UserModel.fromJson(loginData);
       await _authStorage.saveUser(user);
+      // ==========================================================
 
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');

@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../models/informe_model.dart';
 import '../models/user_model.dart';
+import '../models/tipo_informe_model.dart';
 
 class HomeScreen extends StatefulWidget {
   final void Function([String? filter])? onNavigateToInformes;
@@ -19,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   UserModel? _currentUser;
   List<Informe> _recentInformes = [];
+  Map<String, dynamic>? _estadisticas;
+  List<TipoInforme> _tiposInforme = [];
   bool _isLoading = true;
 
   @override
@@ -36,7 +39,13 @@ class _HomeScreenState extends State<HomeScreen> {
       if (user != null && token != null) {
         setState(() => _currentUser = user);
 
-        // Cargar informes
+        // 1. Cargar Estadísticas
+        final stats = await _apiService.getEstadisticas(token);
+
+        // 2. Cargar Tipos de Informe dinámicos
+        final tipos = await _apiService.getTiposInforme(token);
+
+        // 3. Cargar informes
         final informes = await _apiService.getInformes(token);
         final informesList = (informes as List)
             .map((json) => Informe.fromJson(json))
@@ -46,6 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
         informesList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
         setState(() {
+          _estadisticas = stats;
+          _tiposInforme = tipos;
           _recentInformes = informesList.take(3).toList();
           _isLoading = false;
         });
@@ -88,6 +99,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       // Saludo personalizado
                       _buildGreeting(),
+                      const SizedBox(height: 24),
+
+                      // Resumen Clínico (TTR)
+                      _buildClinicalSummary(),
                       const SizedBox(height: 24),
 
                       // Categorías
@@ -162,51 +177,84 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildClinicalSummary() {
+    if (_estadisticas == null || _estadisticas!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final ttr = _estadisticas!['ttr_porcentaje'] ?? 0;
+    final total = _estadisticas!['total_controles'] ?? 0;
+
+    return Card(
+      elevation: 0,
+      color: ttr >= 60 ? Colors.green[50] : Colors.orange[50],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: ttr >= 60 ? Colors.green[200]! : Colors.orange[200]!,
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.monitor_heart,
+                  color: ttr >= 60 ? Colors.green : Colors.orange,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Tu Control TACO (TTR)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '$ttr%',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: ttr >= 60 ? Colors.green : Colors.orange,
+                  ),
+                ),
+                Text(
+                  'Basado en $total controles',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: ttr / 100,
+                minHeight: 8,
+                backgroundColor: Colors.grey[200],
+                color: ttr >= 60 ? Colors.green : Colors.orange,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCategoriesGrid() {
-    final categories = [
-      {
-        'title': 'Control TACO',
-        'icon': Icons.monitor_heart,
-        'color': Colors.red,
-        'filter': 'Control de Anticoagulación',
-      },
-      {
-        'title': 'Consultas',
-        'icon': Icons.local_hospital,
-        'color': Colors.blue,
-        'filter': 'Consulta',
-      },
-      {
-        'title': 'Controles',
-        'icon': Icons.assignment,
-        'color': Colors.green,
-        'filter': 'Control o Seguimiento',
-      },
-      {
-        'title': 'Resultados',
-        'icon': Icons.description,
-        'color': Colors.orange,
-        'filter': 'Entrega de Resultados',
-      },
-      {
-        'title': 'Procedimientos',
-        'icon': Icons.healing,
-        'color': Colors.teal,
-        'filter': 'Procedimiento Médico',
-      },
-      {
-        'title': 'Hospitalización',
-        'icon': Icons.hotel,
-        'color': Colors.indigo,
-        'filter': 'Hospitalización',
-      },
-    ];
+    if (_tiposInforme.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Accesos Rápidos',
+          'Categorías',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -223,14 +271,40 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSpacing: 12,
             childAspectRatio: 0.95,
           ),
-          itemCount: categories.length,
+          itemCount: _tiposInforme.length,
           itemBuilder: (context, index) {
-            final cat = categories[index];
+            final tipo = _tiposInforme[index];
+            // Asignar iconos y colores según el nombre
+            IconData icon = Icons.folder_open;
+            Color color = Colors.blue;
+
+            // Mapear nombres comunes a iconos
+            if (tipo.nombre.toLowerCase().contains('anticoagul')) {
+              icon = Icons.monitor_heart;
+              color = Colors.red;
+            } else if (tipo.nombre.toLowerCase().contains('consulta')) {
+              icon = Icons.local_hospital;
+              color = Colors.blue;
+            } else if (tipo.nombre.toLowerCase().contains('control') ||
+                tipo.nombre.toLowerCase().contains('seguimiento')) {
+              icon = Icons.assignment;
+              color = Colors.green;
+            } else if (tipo.nombre.toLowerCase().contains('resultado')) {
+              icon = Icons.description;
+              color = Colors.orange;
+            } else if (tipo.nombre.toLowerCase().contains('procedimiento')) {
+              icon = Icons.healing;
+              color = Colors.teal;
+            } else if (tipo.nombre.toLowerCase().contains('hospital')) {
+              icon = Icons.hotel;
+              color = Colors.indigo;
+            }
+
             return _buildCategoryCard(
-              cat['title'] as String,
-              cat['icon'] as IconData,
-              cat['color'] as Color,
-              cat['filter'] as String,
+              tipo.nombre,
+              icon,
+              color,
+              tipo.nombre, // Usar el nombre real de la BD como filtro
             );
           },
         ),
