@@ -16,6 +16,8 @@ import { UnifiedRegisterDto } from './dto/unified-register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { Verify2faDto } from './dto/verify-2fa.dto';
 import { Login2faDto } from './dto/login-2fa.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('')
 export class AuthController {
@@ -71,5 +73,17 @@ export class AuthController {
   @HttpCode(200)
   login2FA(@Body(ValidationPipe) dto: Login2faDto) {
     return this.auth.login2fa(dto.tempToken, dto.code);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(200)
+  async forgotPassword(@Body(ValidationPipe) dto: ForgotPasswordDto) {
+    return this.auth.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  async resetPassword(@Body(ValidationPipe) dto: ResetPasswordDto) {
+    return this.auth.resetPassword(dto);
   }
 }
