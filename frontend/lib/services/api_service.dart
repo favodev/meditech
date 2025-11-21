@@ -397,6 +397,9 @@ class ApiService {
             case 'png':
               contentType = MediaType('image', 'png');
               break;
+            case 'bmp':
+              contentType = MediaType('image', 'bmp');
+              break;
             case 'doc':
               contentType = MediaType('application', 'msword');
               break;
@@ -405,6 +408,18 @@ class ApiService {
                 'application',
                 'vnd.openxmlformats-officedocument.wordprocessingml.document',
               );
+              break;
+            case 'xls':
+              contentType = MediaType('application', 'vnd.ms-excel');
+              break;
+            case 'xlsx':
+              contentType = MediaType(
+                'application',
+                'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              );
+              break;
+            case 'txt':
+              contentType = MediaType('text', 'plain');
               break;
             default:
               contentType = MediaType('application', 'octet-stream');
