@@ -337,6 +337,19 @@ class _InformesScreenState extends State<InformesScreen> {
         return;
       }
 
+      // Validar límite de archivos (Backend permite máximo 10)
+      if (files.length > 10) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Máximo 10 archivos por informe'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       // Validar extensiones de archivo contra el backend
       if (!_validateFileExtensions(files)) {
         if (mounted) {
@@ -755,6 +768,22 @@ class _InformesScreenState extends State<InformesScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Debes ingresar el INR actual'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Validar rango de INR (Backend: 0.5 - 20.0)
+                      final inrValue = double.tryParse(
+                        inrController.text.replaceAll(',', '.'),
+                      );
+                      if (inrValue == null ||
+                          inrValue < 0.5 ||
+                          inrValue > 20.0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('El INR debe estar entre 0.5 y 20.0'),
                             backgroundColor: Colors.red,
                           ),
                         );
