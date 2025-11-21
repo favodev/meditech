@@ -7,6 +7,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { UsuarioModule } from '@usuario/usuario.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
@@ -23,6 +24,24 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy';
           },
         };
       },
+    }),
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        transport: {
+          host: config.get('MAIL_HOST'),
+          secure: true,
+          port: 465,
+          auth: {
+            user: config.get('MAIL_USER'),
+            pass: config.get('MAIL_PASS'),
+          },
+        },
+        defaults: {
+          from: config.get('MAIL_FROM'),
+        },
+      }),
     }),
   ],
   controllers: [AuthController],

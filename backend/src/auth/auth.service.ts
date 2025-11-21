@@ -17,6 +17,10 @@ import { TipoUsuario } from '@enums/tipo_usuario.enum';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
+import { MailerService } from '@nestjs-modules/mailer';
+import * as crypto from 'crypto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +28,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     @InjectModel(Usuario.name) private userModel: Model<Usuario>,
+    private readonly mailService: MailerService,
   ) {}
 
   async login(dto: LoginDto) {
@@ -291,6 +296,88 @@ export class AuthService {
 
     return {
       ...tokens,
+    };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.userModel.findOne({ email: dto.email });
+
+    // Por seguridad, respondemos éxito aunque el email no exista
+    if (!user) {
+      return { message: 'Si el correo existe, se ha enviado un enlace.' };
+    }
+
+    // Generar token
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetTokenHash = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    user.passwordResetToken = resetTokenHash;
+    user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    await user.save();
+
+    // 2. ENVIAR EL CORREO REAL
+    try {
+      await this.mailService.sendMail({
+        to: user.email,
+        subject: 'Recuperación de Contraseña - Meditech',
+        html: `
+          <h3>Hola ${user.nombre},</h3>
+          <h1>Tu código de recuperación es: <b>${resetToken}</b></h1>
+          <p>Cópialo y pégalo en la App.</p>
+          <p>Este código es válido por 15 minutos.</p>
+          <br/>
+          <p>Saludos,<br/>El equipo de Meditech</p>
+          `,
+      });
+    } catch (error) {
+      console.error('Error enviando email:', error);
+      // Opcional: throw new InternalServerErrorException('Error al enviar correo');
+    }
+
+    return { message: 'Si el correo existe, se ha enviado un enlace.' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    // 1. Hasheamos el token que recibimos para poder buscarlo en la BD
+    // (Usamos crypto aquí porque necesitamos un hash determinista para la búsqueda)
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(dto.token)
+      .digest('hex');
+
+    // 2. Buscamos al usuario que tenga ese token Y que no haya expirado
+    const user = await this.userModel.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }, // Debe ser mayor a "ahora"
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('El token es inválido o ha expirado.');
+    }
+
+    // 3. AQUÍ USAMOS BCRYPT (Tu librería)
+    // Encriptamos la nueva contraseña igual que en el registro
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, 10);
+
+    // 4. Actualizamos el usuario
+    user.password_hash = newPasswordHash;
+
+    // 5. Limpiamos los campos de recuperación (para que el token no se use 2 veces)
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    // Opcional: Invalidar sesiones abiertas cambiando el refresh token
+    user.currentHashedRefreshToken = undefined;
+
+    await user.save();
+
+    return {
+      message:
+        'Contraseña actualizada correctamente. Ya puedes iniciar sesión.',
     };
   }
 }
