@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -325,17 +326,22 @@ export class AuthService {
         to: user.email,
         subject: 'Recuperación de Contraseña - Meditech',
         html: `
-          <h3>Hola ${user.nombre},</h3>
-          <h1>Tu código de recuperación es: <b>${resetToken}</b></h1>
-          <p>Cópialo y pégalo en la App.</p>
-          <p>Este código es válido por 15 minutos.</p>
-          <br/>
-          <p>Saludos,<br/>El equipo de Meditech</p>
+          <div style="font-family: Arial, sans-serif; text-align: center;">
+            <h2>Recuperación de Contraseña</h2>
+            <p>Hola ${user.nombre}, usa el siguiente código en la App para restablecer tu clave:</p>
+            
+            <div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 8px;">
+              ${resetToken}
+            </div>
+
+            <p>Este código expira en 15 minutos.</p>
+            <p style="font-size: 12px; color: #888;">Si no solicitaste esto, ignora este mensaje.</p>
+          </div>
           `,
       });
     } catch (error) {
       console.error('Error enviando email:', error);
-      // Opcional: throw new InternalServerErrorException('Error al enviar correo');
+      throw new InternalServerErrorException('Error al enviar correo');
     }
 
     return { message: 'Si el correo existe, se ha enviado un enlace.' };
