@@ -14,11 +14,11 @@ import { CreateEspecialidadDto } from './dto/create-especialidad.dto';
 import { UpdateEspecialidadDto } from './dto/update-especialidad.dto';
 
 @Controller('especialidad')
-@UseGuards(AuthGuard('jwt'))
 export class EspecialidadController {
   constructor(private readonly especialidadService: EspecialidadService) {}
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   create(@Body() createEspecialidadDto: CreateEspecialidadDto) {
     return this.especialidadService.create(createEspecialidadDto);
   }
@@ -34,6 +34,7 @@ export class EspecialidadController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
   update(
     @Param('id') id: string,
     @Body() updateEspecialidadDto: UpdateEspecialidadDto,
@@ -42,6 +43,7 @@ export class EspecialidadController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
   remove(@Param('id') id: string) {
     return this.especialidadService.remove(id);
   }
