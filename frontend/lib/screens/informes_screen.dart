@@ -449,7 +449,37 @@ class _InformesScreenState extends State<InformesScreen> {
     final tituloController = TextEditingController();
     final runMedicoController = TextEditingController();
     final observacionesController = TextEditingController();
-    final inrController = TextEditingController(); // <--- NUEVO
+    final inrController = TextEditingController();
+
+    // NUEVO: Variable para la fecha de próximo control
+    DateTime? fechaProximoControl;
+
+    // NUEVO: Lista de dosis que el backend (informe.service.ts) sabe calcular correctamente
+    final List<String> opcionesDosis = [
+      '0',
+      '1/4',
+      '1/2',
+      '3/4',
+      '1',
+      '1 1/4',
+      '1 1/2',
+      '1 3/4',
+      '2',
+      '2 1/2',
+      '3',
+    ];
+
+    // MODIFICADO: Mapa para guardar los VALORES seleccionados (Strings), no controladores
+    // Inicializamos todos en null
+    final Map<String, String?> dosisSeleccionada = {
+      'Lunes': null,
+      'Martes': null,
+      'Miércoles': null,
+      'Jueves': null,
+      'Viernes': null,
+      'Sábado': null,
+      'Domingo': null,
+    };
 
     // Default to "Control de Anticoagulación" if available, otherwise first one
     TipoInforme? selectedTipo;
@@ -463,17 +493,6 @@ class _InformesScreenState extends State<InformesScreen> {
     } catch (e) {
       // Handle empty list
     }
-
-    // Controladores para dosis diaria
-    final Map<String, TextEditingController> dosisControllers = {
-      'Lunes': TextEditingController(),
-      'Martes': TextEditingController(),
-      'Miércoles': TextEditingController(),
-      'Jueves': TextEditingController(),
-      'Viernes': TextEditingController(),
-      'Sábado': TextEditingController(),
-      'Domingo': TextEditingController(),
-    };
 
     return showDialog<Map<String, dynamic>>(
       context: context,
@@ -568,6 +587,7 @@ class _InformesScreenState extends State<InformesScreen> {
                     ),
                     if (isTaco) ...[
                       const SizedBox(height: 24),
+                      // 1. Campo INR (Vital para TTR)
                       TextField(
                         controller: inrController,
                         decoration: const InputDecoration(
@@ -579,16 +599,58 @@ class _InformesScreenState extends State<InformesScreen> {
                           decimal: true,
                         ),
                       ),
+
                       const SizedBox(height: 24),
+
+                      // 2. Selector de Fecha Próximo Control (NUEVO)
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now().add(
+                              const Duration(days: 7),
+                            ), // Sugerir 1 semana
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365),
+                            ),
+                          );
+                          if (picked != null) {
+                            setState(() => fechaProximoControl = picked);
+                          }
+                        },
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Fecha Próximo Control *',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.calendar_month),
+                          ),
+                          child: Text(
+                            fechaProximoControl != null
+                                ? '${fechaProximoControl!.day}/${fechaProximoControl!.month}/${fechaProximoControl!.year}'
+                                : 'Seleccionar fecha',
+                            style: TextStyle(
+                              color: fechaProximoControl != null
+                                  ? Colors.black
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // 3. Dosis Diaria con Dropdowns (Seguridad de Datos)
                       const Text(
-                        'Dosis Diaria (Cantidad de pastillas):',
+                        'Dosis Diaria (Pastillas):',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      ...dosisControllers.entries.map((entry) {
+                      // Iteramos sobre el mapa para crear los Dropdowns
+                      ...dosisSeleccionada.keys.map((dia) {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 8.0),
                           child: Row(
@@ -596,25 +658,34 @@ class _InformesScreenState extends State<InformesScreen> {
                               SizedBox(
                                 width: 100,
                                 child: Text(
-                                  entry.key,
+                                  dia,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
                               Expanded(
-                                child: TextField(
-                                  controller: entry.value,
+                                child: DropdownButtonFormField<String>(
+                                  value: dosisSeleccionada[dia],
                                   decoration: const InputDecoration(
                                     border: OutlineInputBorder(),
                                     contentPadding: EdgeInsets.symmetric(
                                       horizontal: 12,
                                       vertical: 8,
                                     ),
-                                    hintText: 'Ej: 1/2, 1, 1.5',
-                                    suffixText: 'comp.',
+                                    hintText: 'Seleccionar',
                                   ),
-                                  keyboardType: TextInputType.text,
+                                  items: opcionesDosis.map((dosis) {
+                                    return DropdownMenuItem(
+                                      value: dosis,
+                                      child: Text(dosis),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    setState(
+                                      () => dosisSeleccionada[dia] = val,
+                                    );
+                                  },
                                 ),
                               ),
                             ],
@@ -679,7 +750,7 @@ class _InformesScreenState extends State<InformesScreen> {
                     Map<String, dynamic>? contenidoClinico;
 
                     if (isTaco) {
-                      // Validar INR
+                      // 1. Validar INR
                       if (inrController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -690,14 +761,27 @@ class _InformesScreenState extends State<InformesScreen> {
                         return;
                       }
 
-                      // Recolectar dosis
-                      final Map<String, String> dosisDiaria =
-                          {}; // Cambiar a String para soportar "1/4"
+                      // 2. Validar Fecha Próximo Control
+                      if (fechaProximoControl == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Debes indicar la fecha del próximo control',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      // 3. Recolectar Dosis (Usando el mapa de Strings)
+                      final Map<String, String> dosisDiariaBackend = {};
                       bool hasDosis = false;
-                      dosisControllers.forEach((day, controller) {
-                        if (controller.text.isNotEmpty) {
-                          // Convertir la clave a minúsculas y quitar tildes
-                          String key = day
+
+                      dosisSeleccionada.forEach((dia, valor) {
+                        if (valor != null && valor.isNotEmpty) {
+                          // Normalizar clave para el backend (lunes, martes...)
+                          String key = dia
                               .toLowerCase()
                               .replaceAll('á', 'a')
                               .replaceAll('é', 'e')
@@ -705,7 +789,7 @@ class _InformesScreenState extends State<InformesScreen> {
                               .replaceAll('ó', 'o')
                               .replaceAll('ú', 'u');
 
-                          dosisDiaria[key] = controller.text.trim();
+                          dosisDiariaBackend[key] = valor;
                           hasDosis = true;
                         }
                       });
@@ -714,7 +798,7 @@ class _InformesScreenState extends State<InformesScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                              'Por favor ingresa al menos una dosis diaria',
+                              'Ingresa la dosis para al menos un día',
                             ),
                             backgroundColor: Colors.red,
                           ),
@@ -722,13 +806,16 @@ class _InformesScreenState extends State<InformesScreen> {
                         return;
                       }
 
+                      // Construir objeto final
                       contenidoClinico = {
                         'inr_actual':
                             double.tryParse(
                               inrController.text.replaceAll(',', '.'),
                             ) ??
                             0.0,
-                        'dosis_diaria': dosisDiaria,
+                        'fecha_proximo_control': fechaProximoControl
+                            ?.toIso8601String(), // <--- ENVIAMOS LA FECHA
+                        'dosis_diaria': dosisDiariaBackend,
                       };
                     }
 
