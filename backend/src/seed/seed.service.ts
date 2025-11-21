@@ -465,6 +465,12 @@ export class SeedService {
       direccion: 'Calle Arturo Prat S/N, Ñuble, Chile',
       fecha_nacimiento: new Date('2002-07-27'),
       telefono_emergencia: '+56987654321',
+      datos_anticoagulacion: {
+        medicamento: 'Acenocumarol',
+        mg_por_pastilla: 4,
+        rango_meta: { min: 2.0, max: 3.0 },
+        fecha_inicio_tratamiento: new Date('2024-01-01'),
+      },
     });
 
     const usuario2 = new this.usuarioModel({
@@ -507,15 +513,16 @@ export class SeedService {
 
     const informe1 = new this.informeModel({
       _id: '6904fb1ede6d2dd2ff3391ad',
-      titulo: 'Test',
+      titulo: 'Test Dermatología',
       tipo_informe: 'Consulta de Especialidad',
-      observaciones: 'aaa',
+      observaciones: 'Revisión lunares',
       run_paciente: '21263713-0',
       run_medico: '12762554-9',
       archivos: [
         {
           nombre: 'IMG_20251024_193618.jpg',
           formato: 'image/jpeg',
+          tipo: 'Informe Médico',
           urlpath:
             '6904fb1ede6d2dd2ff3391ad/1761934110638-img20251024193618.jpg',
         },
@@ -526,15 +533,16 @@ export class SeedService {
 
     const informe2 = new this.informeModel({
       _id: '6907e69a1707c4b4f62fdb2e',
-      titulo: 'Testing2',
+      titulo: 'Exámenes Sangre',
       tipo_informe: 'Procedimiento Médico',
-      observaciones: 'nota..',
+      observaciones: 'Ayuno',
       run_paciente: '21263713-0',
       run_medico: '12762554-9',
       archivos: [
         {
           nombre: 'IMG_20251024_193618 (2).jpg',
           formato: 'image/jpeg',
+          tipo: 'Examen de Laboratorio',
           urlpath:
             '6907e69a1707c4b4f62fdb2e/1762125466038-img20251024193618-2.jpg',
         },
@@ -544,15 +552,44 @@ export class SeedService {
     });
 
     const informe3 = new this.informeModel({
-      titulo: 'Informe de Prueba',
+      titulo: 'Informe General',
       tipo_informe: 'Consulta General',
-      observaciones: 'Paciente refiere buen estado general.',
+      observaciones: 'Todo ok',
       run_paciente: usuario1.run,
       run_medico: '9.876.543-K',
       archivos: [],
     });
 
-    await Promise.all([informe1.save(), informe2.save(), informe3.save()]);
+    const informeTaco = new this.informeModel({
+      titulo: 'Control TACO Noviembre',
+      tipo_informe: 'Control de Anticoagulación',
+      observaciones: 'Estable',
+      run_paciente: usuario1.run,
+      run_medico: '11.222.333-4',
+      archivos: [],
+      createdAt: new Date('2025-11-15T10:00:00.000Z'),
+      contenido_clinico: {
+        inr_actual: 2.4,
+        fecha_proximo_control: new Date('2025-12-15'),
+        dosis_semanal_total_mg: 14,
+        dosis_diaria: {
+          lunes: '1/2',
+          martes: '1/2',
+          miercoles: '1/2',
+          jueves: '1/2',
+          viernes: '1/2',
+          sabado: '1/2',
+          domingo: '1/2',
+        },
+      },
+    });
+
+    await Promise.all([
+      informe1.save(),
+      informe2.save(),
+      informe3.save(),
+      informeTaco.save(),
+    ]);
 
     return {
       message: 'Base de datos poblada exitosamente',
@@ -563,7 +600,7 @@ export class SeedService {
         tiposInstitucion: tiposInstitucionCreados.length,
         instituciones: institucionesCreadas.length,
         usuarios: 3,
-        informes: 3,
+        informes: 4,
       },
       usuariosPrueba: [
         {
@@ -597,6 +634,10 @@ export class SeedService {
         {
           id: informe3._id,
           titulo: informe3.titulo,
+        },
+        {
+          id: informeTaco._id,
+          titulo: informeTaco.titulo,
         },
       ],
     };
