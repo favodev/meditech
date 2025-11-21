@@ -19,7 +19,7 @@ class Archivo {
 }
 
 class ContenidoClinico {
-  final Map<String, double> dosisDiaria;
+  final Map<String, String> dosisDiaria;
   final double? dosisSemanalMg;
 
   ContenidoClinico({required this.dosisDiaria, this.dosisSemanalMg});
@@ -28,7 +28,7 @@ class ContenidoClinico {
     return ContenidoClinico(
       dosisDiaria:
           (json['dosis_diaria'] as Map<String, dynamic>?)?.map(
-            (key, value) => MapEntry(key, (value as num).toDouble()),
+            (key, value) => MapEntry(key, value.toString()),
           ) ??
           {},
       dosisSemanalMg: (json['dosis_semanal_mg'] as num?)?.toDouble(),
