@@ -7,22 +7,17 @@ import '../models/tipo_informe_model.dart';
 import 'auth_storage.dart';
 
 class ApiService {
-  // Detecta automáticamente si estás en emulador Android (10.0.2.2) o producción
   static String get baseUrl {
     if (kReleaseMode) {
       return 'https://api-meditech-285055742691.southamerica-west1.run.app';
     } else {
-      // IP para emulador Android local.
-      // Usa 'localhost' si pruebas en iOS/Web, o tu IP de LAN para dispositivo físico.
       return 'https://api-meditech-285055742691.southamerica-west1.run.app';
-      // return 'http://10.0.2.2:3000'; // Descomentar para desarrollo local
     }
   }
 
   final AuthStorage _authStorage = AuthStorage();
   Future<void>? _refreshFuture;
 
-  /// Ejecuta una petición HTTP con auto-refresh de token en caso de 401
   Future<http.Response> _requestWithAutoRefresh(
     Future<http.Response> Function(String token) request,
   ) async {
@@ -31,33 +26,30 @@ class ApiService {
       throw Exception('No hay token de autenticación');
     }
 
-    // Si ya se está refrescando, esperar a que termine antes de hacer la primera llamada
     if (_refreshFuture != null) {
       await _refreshFuture;
-      token = await _authStorage.getToken(); // Obtener el nuevo token
+      token = await _authStorage.getToken();
     }
 
     http.Response response = await request(token!);
 
     if (response.statusCode == 401) {
-      // Si no hay un refresh en proceso, iniciarlo
       if (_refreshFuture == null) {
         debugPrint('🔄 Token expirado, iniciando renovación...');
-        _refreshFuture = _refreshTokenFlow(); // Guardar la promesa
+        _refreshFuture = _refreshTokenFlow();
       }
 
       try {
-        await _refreshFuture; // Esperar a que termine (sea el mío o uno existente)
+        await _refreshFuture;
         final newToken = await _authStorage.getToken();
         if (newToken != null) {
-          response = await request(newToken); // Reintentar con token nuevo
+          response = await request(newToken);
         }
       } catch (e) {
-        // Si falla el refresh, logout
         await _authStorage.logout();
         rethrow;
       } finally {
-        _refreshFuture = null; // Limpiar el futuro al terminar
+        _refreshFuture = null;
       }
     }
 
