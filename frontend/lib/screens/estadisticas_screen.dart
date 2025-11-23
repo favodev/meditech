@@ -140,6 +140,29 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
                       color: isGood ? Colors.green[700] : Colors.orange[700],
                     ),
                   ),
+                  if (_statsData!['rango_meta'] != null)
+                    Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Meta INR: ${_statsData!['rango_meta']['min']} - ${_statsData!['rango_meta']['max']}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isGood
+                              ? Colors.green[800]
+                              : Colors.orange[800],
+                        ),
+                      ),
+                    ),
+                  // ----------------------------------------
                 ],
               ),
               Container(
