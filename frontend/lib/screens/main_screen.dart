@@ -3,6 +3,7 @@ import 'home_screen.dart';
 import 'informes_screen.dart';
 import 'configuracion_screen.dart';
 import 'qr_scanner_screen.dart';
+import 'estadisticas_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -22,7 +23,6 @@ class _MainScreenState extends State<MainScreen>
     debugPrint('📍 MainScreen: Navegando a Informes con filtro: "$filter"');
     setState(() {
       _informesFilter = filter;
-      // Generar nueva key para forzar reconstrucción completa
       _informesKey = UniqueKey();
     });
     _onItemTapped(2);
@@ -32,7 +32,7 @@ class _MainScreenState extends State<MainScreen>
     HomeScreen(onNavigateToInformes: _navigateToInformes),
     const QRScannerScreen(),
     InformesScreen(key: _informesKey, initialFilter: _informesFilter),
-    const Center(child: Text('Chat - Próximamente')),
+    const EstadisticasScreen(),
     const ConfiguracionScreen(),
   ];
 
@@ -157,7 +157,7 @@ class _MainScreenState extends State<MainScreen>
                     ),
                   ),
                 ),
-                // Chat
+                // Seguimiento
                 Expanded(
                   child: InkWell(
                     onTap: () => _onItemTapped(3),
@@ -165,13 +165,13 @@ class _MainScreenState extends State<MainScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.chat_bubble_outline,
+                          Icons.insights,
                           color: _selectedIndex == 3
                               ? const Color(0xFF2196F3)
                               : Colors.grey,
                         ),
                         Text(
-                          'Chat',
+                          'Seguimiento',
                           style: TextStyle(
                             fontSize: 12,
                             color: _selectedIndex == 3
