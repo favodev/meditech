@@ -16,12 +16,12 @@ export class UnifiedRegisterDto extends RegisterDto {
   @IsObject()
   @ValidateNested()
   @Type(() => CreatePacienteDetailsDto)
-  paciente_detalle: CreatePacienteDetailsDto;
+  declare paciente_detalle: CreatePacienteDetailsDto;
 
   @ValidateIf((o) => o.tipo_usuario === TipoUsuario.MEDICO)
   @IsNotEmpty()
   @IsObject()
   @ValidateNested()
   @Type(() => CreateMedicoDetailsDto)
-  medico_detalle: CreateMedicoDetailsDto;
+  declare medico_detalle: CreateMedicoDetailsDto;
 }
