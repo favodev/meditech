@@ -26,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _telefonoConsultorioController = TextEditingController();
   final _aniosExperienciaController = TextEditingController();
   final _registroMpiController = TextEditingController();
-  // Controladores TACO
   final _rangoMinController = TextEditingController();
   final _rangoMaxController = TextEditingController();
   final _mgPastillaController = TextEditingController();
@@ -77,7 +76,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _apellidoController.text = profile['apellido'] ?? '';
         _telefonoController.text = profile['telefono'] ?? '';
 
-        // Datos de paciente
         if (_tipoUsuario == 'Paciente') {
           _sexo = profile['sexo'];
           _direccionController.text = profile['direccion'] ?? '';
@@ -87,7 +85,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _fechaNacimiento = DateTime.parse(profile['fecha_nacimiento']);
           }
 
-          // Cargar datos TACO
           if (profile['datos_anticoagulacion'] != null) {
             final datos = profile['datos_anticoagulacion'];
             _medicamentoSeleccionado = datos['medicamento'];
@@ -269,7 +266,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header con tipo de usuario
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -283,7 +279,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2196F3).withOpacity(0.1),
+                              color: const Color(
+                                0xFF2196F3,
+                              ).withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -316,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   decoration: BoxDecoration(
                                     color: const Color(
                                       0xFF2196F3,
-                                    ).withOpacity(0.1),
+                                    ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -480,7 +478,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
 
                     DropdownButtonFormField<String>(
-                      value: _medicamentoSeleccionado,
+                      initialValue: _medicamentoSeleccionado,
                       decoration: const InputDecoration(
                         labelText: 'Medicamento',
                         border: OutlineInputBorder(),

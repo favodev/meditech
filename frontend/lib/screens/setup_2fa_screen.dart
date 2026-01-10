@@ -24,7 +24,6 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
   @override
   void initState() {
     super.initState();
-    // TODO: Verificar si 2FA ya está activado
   }
 
   @override
@@ -141,11 +140,10 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icono
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.1),
+                color: const Color(0xFF2196F3).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -155,15 +153,11 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
               ),
             ),
             const SizedBox(height: 32),
-
-            // Título
             const Text(
               'Protege tu Cuenta',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-
-            // Descripción
             const Text(
               'La autenticación de dos factores agrega una capa extra de seguridad a tu cuenta.',
               textAlign: TextAlign.center,
@@ -171,7 +165,6 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Card informativa
             Card(
               elevation: 2,
               child: Padding(
@@ -210,7 +203,6 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Nota
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -233,7 +225,6 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Botón para comenzar
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -322,7 +313,6 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
           ),
           const SizedBox(height: 32),
 
-          // QR Code
           if (_qrCodeDataUrl != null)
             Center(
               child: Container(
@@ -332,7 +322,7 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -347,7 +337,6 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
             ),
           const SizedBox(height: 24),
 
-          // Código secreto (por si no puede escanear)
           if (_secret != null)
             Container(
               padding: const EdgeInsets.all(16),
@@ -393,7 +382,6 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
             ),
           const SizedBox(height: 32),
 
-          // Campo para ingresar código de verificación
           const Text(
             'Ingresa el código de 6 dígitos:',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -422,7 +410,6 @@ class _Setup2FAScreenState extends State<Setup2FAScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Botón para verificar
           ElevatedButton(
             onPressed: _verifyAndEnable,
             style: ElevatedButton.styleFrom(

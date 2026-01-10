@@ -55,9 +55,8 @@ class _LoginScreenState extends State<LoginScreen>
         _passwordController.text,
       );
 
-      // Verificar si requiere 2FA (backend retorna needs2fa: true)
+      // Verificar si requiere 2FA
       if (response['needs2fa'] == true) {
-        // Navegar a la pantalla de 2FA con el tempToken
         if (mounted) {
           setState(() => _isLoading = false);
           Navigator.pushNamed(
@@ -69,14 +68,9 @@ class _LoginScreenState extends State<LoginScreen>
         return;
       }
 
-      // === CORRECCIÓN: Obtener perfil completo antes de guardar ===
       final accessToken = response['accessToken'];
       final refreshToken = response['refreshToken'];
-
-      // 1. Pedir datos del usuario al backend usando el token nuevo
       final userProfile = await _apiService.getUserProfile(accessToken);
-
-      // 2. Construir el objeto completo
       final loginData = {
         'usuario': userProfile,
         'accessToken': accessToken,
@@ -85,7 +79,6 @@ class _LoginScreenState extends State<LoginScreen>
 
       final user = UserModel.fromJson(loginData);
       await _authStorage.saveUser(user);
-      // ==========================================================
 
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
@@ -171,7 +164,9 @@ class _LoginScreenState extends State<LoginScreen>
                           await _apiService.forgotPassword(
                             emailController.text.trim(),
                           );
-                          Navigator.pop(dialogContext, true);
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext, true);
+                          }
                         } catch (e) {
                           setState(() => isLoading = false);
                           if (context.mounted) {
@@ -230,7 +225,6 @@ class _LoginScreenState extends State<LoginScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Tabs fijos en la parte superior
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(

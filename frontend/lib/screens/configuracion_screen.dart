@@ -62,8 +62,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: (iconColor ?? const Color(0xFF2196F3)).withOpacity(
-                    0.1,
+                  color: (iconColor ?? const Color(0xFF2196F3)).withValues(
+                    alpha: 0.1,
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -192,7 +192,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
+                            color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.green, width: 1.5),
                           ),
@@ -243,26 +243,21 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                       );
 
                       if (confirm == true) {
-                        // 1. Intentar invalidar sesión en el servidor (Backend)
                         try {
                           final token = await _authStorage.getToken();
                           if (token != null) {
-                            await _apiService.logout(
-                              token,
-                            ); // Llamada al backend
+                            await _apiService.logout(token);
                           }
                         } catch (e) {
                           debugPrint('Error en logout remoto (no crítico): $e');
                         }
 
-                        // 2. Eliminar datos locales
                         await _authStorage.logout();
 
-                        if (mounted) {
-                          Navigator.of(
-                            context,
-                          ).pushNamedAndRemoveUntil('/login', (route) => false);
-                        }
+                        if (!context.mounted) return;
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/login', (route) => false);
                       }
                     },
                     icon: const Icon(Icons.logout),

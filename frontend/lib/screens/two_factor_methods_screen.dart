@@ -66,21 +66,7 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
       final token = await _authStorage.getToken();
       if (token == null) throw Exception('No hay sesión activa');
 
-      // TODO: Implementar endpoint de desactivación en backend
-      // Por ahora solo mostramos mensaje
       throw Exception('Función no disponible aún en el backend');
-
-      // await _apiService.disable2FA(token);
-      //
-      // if (mounted) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(
-      //       content: Text('2FA desactivado exitosamente'),
-      //       backgroundColor: Colors.orange,
-      //     ),
-      //   );
-      //   Navigator.pop(context);
-      // }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,7 +120,7 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -222,7 +208,6 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Botón para desactivar
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -276,7 +261,6 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Método 1: App Authenticator (DISPONIBLE)
           _buildMethodCard(
             icon: Icons.qr_code_2,
             iconColor: const Color(0xFF2196F3),
@@ -292,7 +276,6 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Método 2: SMS (NO DISPONIBLE)
           _buildMethodCard(
             icon: Icons.sms,
             iconColor: Colors.grey,
@@ -305,7 +288,6 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Método 3: Email (NO DISPONIBLE)
           _buildMethodCard(
             icon: Icons.email,
             iconColor: Colors.grey,
@@ -349,7 +331,7 @@ class _TwoFactorMethodsScreenState extends State<TwoFactorMethodsScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: iconColor.withOpacity(0.1),
+                          color: iconColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(icon, color: iconColor, size: 32),

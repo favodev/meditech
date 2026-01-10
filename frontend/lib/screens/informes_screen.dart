@@ -69,8 +69,6 @@ class _InformesScreenState extends State<InformesScreen> {
     return true;
   }
 
-  /// Obtiene las extensiones permitidas para mostrar al usuario
-  /// Lista estática de extensiones médicas comunes
   List<String> _getAllowedExtensions() {
     return [
       'pdf',
@@ -110,7 +108,7 @@ class _InformesScreenState extends State<InformesScreen> {
           return matchTitulo || matchTipo;
         }).toList();
         debugPrint(
-          '✅ Encontrados: ${_informesFiltrados.length} de ${_informes.length}',
+          'Encontrados: ${_informesFiltrados.length} de ${_informes.length}',
         );
       }
       _sortInformes();
@@ -189,7 +187,7 @@ class _InformesScreenState extends State<InformesScreen> {
   }
 
   Future<void> _loadUserData() async {
-    // Cargar usuario (siempre extrae el RUN del JWT automáticamente)
+    // Cargar usuario
     final user = await _authStorage.getUser();
     if (user != null) {
       setState(() {
@@ -197,7 +195,7 @@ class _InformesScreenState extends State<InformesScreen> {
       });
       debugPrint('✅ Usuario cargado: ${user.nombre}');
       debugPrint(
-        '✅ RUN del usuario: ${user.run.isNotEmpty ? user.run : "VACÍO"}',
+        'RUN del usuario: ${user.run.isNotEmpty ? user.run : "VACÍO"}',
       );
     } else {
       debugPrint('⚠️ No se pudo cargar el usuario');
@@ -215,10 +213,10 @@ class _InformesScreenState extends State<InformesScreen> {
         throw Exception('No hay sesión activa');
       }
 
-      debugPrint('🔄 Cargando informes del usuario...');
+      debugPrint('Cargando informes del usuario...');
       final informesData = await _apiService.getInformes(token);
 
-      debugPrint('✅ Informes recibidos: ${informesData.length}');
+      debugPrint('Informes recibidos: ${informesData.length}');
 
       final informes = informesData
           .map((data) => Informe.fromJson(data))
@@ -242,10 +240,10 @@ class _InformesScreenState extends State<InformesScreen> {
         _isLoading = false;
       });
 
-      debugPrint('✅ Informes cargados en la UI: ${_informes.length}');
-      debugPrint('✅ Informes filtrados: ${_informesFiltrados.length}');
+      debugPrint('Informes cargados en la UI: ${_informes.length}');
+      debugPrint('Informes filtrados: ${_informesFiltrados.length}');
     } catch (e) {
-      debugPrint('❌ Error al cargar informes: $e');
+      debugPrint('Error al cargar informes: $e');
       setState(() {
         _isLoading = false;
       });
@@ -295,11 +293,10 @@ class _InformesScreenState extends State<InformesScreen> {
       return;
     }
 
-    debugPrint('👤 Usuario actual: ${_currentUser!.nombre}');
-    debugPrint('👤 RUN del usuario: ${_currentUser!.run}');
+    debugPrint('Usuario actual: ${_currentUser!.nombre}');
+    debugPrint('RUN del usuario: ${_currentUser!.run}');
 
     try {
-      // PRIMERO: Seleccionar archivos con extensiones permitidas
       final allowedExtensions = _getAllowedExtensions();
 
       FilePickerResult? fileResult = await FilePicker.platform.pickFiles(
@@ -337,7 +334,7 @@ class _InformesScreenState extends State<InformesScreen> {
         return;
       }
 
-      // Validar límite de archivos (Backend permite máximo 10)
+      // Validar límite de archivos
       if (files.length > 10) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -366,7 +363,6 @@ class _InformesScreenState extends State<InformesScreen> {
         return;
       }
 
-      // Fetch types
       List<TipoInforme> tiposInforme = [];
       try {
         final token = await _authStorage.getToken();
@@ -377,7 +373,6 @@ class _InformesScreenState extends State<InformesScreen> {
         debugPrint('Error fetching types: $e');
       }
 
-      // VALIDACIÓN: Si el usuario es Paciente, verificar perfil médico antes de continuar
       if (_currentUser!.tipoUsuario == 'Paciente') {
         try {
           final token = await _authStorage.getToken();
@@ -385,7 +380,6 @@ class _InformesScreenState extends State<InformesScreen> {
             final profile = await _apiService.getUserProfile(token);
             final datosAnticoagulacion = profile['datos_anticoagulacion'];
 
-            // Verificar si tiene configurado el tratamiento TACO
             if (datosAnticoagulacion == null ||
                 datosAnticoagulacion['mg_por_pastilla'] == null) {
               if (mounted) {
@@ -411,12 +405,10 @@ class _InformesScreenState extends State<InformesScreen> {
             }
           }
         } catch (e) {
-          debugPrint('⚠️ Error al verificar perfil médico: $e');
-          // Si hay error, permitir continuar (la validación real la hace el backend)
+          debugPrint('Error al verificar perfil médico: $e');
         }
       }
 
-      // SEGUNDO: Mostrar diálogo para ingresar información del informe
       final result = await _showInformeDialog(
         fileCount: files.length,
         tiposInforme: tiposInforme,
@@ -455,7 +447,7 @@ class _InformesScreenState extends State<InformesScreen> {
         token: token,
       );
 
-      debugPrint('✅ Respuesta recibida del servidor');
+      debugPrint('Respuesta recibida del servidor');
       final nuevoInforme = Informe.fromJson(informeData);
       debugPrint('  Informe ID: ${nuevoInforme.id}');
       debugPrint('  Archivos guardados: ${nuevoInforme.archivos.length}');
@@ -503,10 +495,8 @@ class _InformesScreenState extends State<InformesScreen> {
     final observacionesController = TextEditingController();
     final inrController = TextEditingController();
 
-    // NUEVO: Variable para la fecha de próximo control
     DateTime? fechaProximoControl;
 
-    // NUEVO: Lista de dosis que el backend (informe.service.ts) sabe calcular correctamente
     final List<String> opcionesDosis = [
       '0',
       '1/4',
@@ -521,8 +511,6 @@ class _InformesScreenState extends State<InformesScreen> {
       '3',
     ];
 
-    // MODIFICADO: Mapa para guardar los VALORES seleccionados (Strings), no controladores
-    // Inicializamos todos en null
     final Map<String, String?> dosisSeleccionada = {
       'Lunes': null,
       'Martes': null,
@@ -533,7 +521,6 @@ class _InformesScreenState extends State<InformesScreen> {
       'Domingo': null,
     };
 
-    // Default to "Control de Anticoagulación" if available, otherwise first one
     TipoInforme? selectedTipo;
     try {
       selectedTipo = tiposInforme.firstWhere(
@@ -586,7 +573,7 @@ class _InformesScreenState extends State<InformesScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<TipoInforme>(
-                      value: selectedTipo,
+                      initialValue: selectedTipo,
                       decoration: const InputDecoration(
                         labelText: 'Tipo de Informe *',
                         border: OutlineInputBorder(),
@@ -639,7 +626,6 @@ class _InformesScreenState extends State<InformesScreen> {
                     ),
                     if (isTaco) ...[
                       const SizedBox(height: 24),
-                      // 1. Campo INR (Vital para TTR)
                       TextField(
                         controller: inrController,
                         decoration: const InputDecoration(
@@ -654,14 +640,13 @@ class _InformesScreenState extends State<InformesScreen> {
 
                       const SizedBox(height: 24),
 
-                      // 2. Selector de Fecha Próximo Control (NUEVO)
                       InkWell(
                         onTap: () async {
                           final picked = await showDatePicker(
                             context: context,
                             initialDate: DateTime.now().add(
                               const Duration(days: 7),
-                            ), // Sugerir 1 semana
+                            ),
                             firstDate: DateTime.now(),
                             lastDate: DateTime.now().add(
                               const Duration(days: 365),
@@ -692,7 +677,6 @@ class _InformesScreenState extends State<InformesScreen> {
 
                       const SizedBox(height: 24),
 
-                      // 3. Dosis Diaria con Dropdowns (Seguridad de Datos)
                       const Text(
                         'Dosis Diaria (Pastillas):',
                         style: TextStyle(
@@ -701,7 +685,6 @@ class _InformesScreenState extends State<InformesScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Iteramos sobre el mapa para crear los Dropdowns
                       ...dosisSeleccionada.keys.map((dia) {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 8.0),
@@ -718,7 +701,7 @@ class _InformesScreenState extends State<InformesScreen> {
                               ),
                               Expanded(
                                 child: DropdownButtonFormField<String>(
-                                  value: dosisSeleccionada[dia],
+                                  initialValue: dosisSeleccionada[dia],
                                   decoration: const InputDecoration(
                                     border: OutlineInputBorder(),
                                     contentPadding: EdgeInsets.symmetric(
@@ -813,7 +796,7 @@ class _InformesScreenState extends State<InformesScreen> {
                         return;
                       }
 
-                      // Validar rango de INR (Backend: 0.5 - 20.0)
+                      // Validar rango de INR
                       final inrValue = double.tryParse(
                         inrController.text.replaceAll(',', '.'),
                       );
@@ -882,7 +865,7 @@ class _InformesScreenState extends State<InformesScreen> {
                             ) ??
                             0.0,
                         'fecha_proximo_control': fechaProximoControl
-                            ?.toIso8601String(), // <--- ENVIAMOS LA FECHA
+                            ?.toIso8601String(),
                         'dosis_diaria': dosisDiariaBackend,
                       };
                     }
@@ -1020,7 +1003,6 @@ class _InformesScreenState extends State<InformesScreen> {
     // Descargar todos los archivos
     for (var archivo in informe.archivos) {
       await _downloadFile(archivo.urlpath, archivo.nombre);
-      // Pequeña pausa entre descargas para no saturar
       await Future.delayed(const Duration(milliseconds: 500));
     }
   }
@@ -1032,7 +1014,6 @@ class _InformesScreenState extends State<InformesScreen> {
         throw Exception('No hay sesión activa');
       }
 
-      // Mostrar loading
       if (mounted) {
         showDialog(
           context: context,
@@ -1053,14 +1034,11 @@ class _InformesScreenState extends State<InformesScreen> {
         throw Exception('No se pudo generar la URL de compartir');
       }
 
-      // Cerrar loading
       if (mounted) Navigator.pop(context);
-
-      // Mostrar QR
       if (mounted) {
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (dialogContext) => AlertDialog(
             title: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1146,14 +1124,14 @@ class _InformesScreenState extends State<InformesScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Cerrar'),
               ),
               ElevatedButton.icon(
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: shareUrl));
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
                       const SnackBar(
                         content: Text('URL copiada al portapapeles'),
                         backgroundColor: Colors.green,
@@ -1197,7 +1175,6 @@ class _InformesScreenState extends State<InformesScreen> {
         builder: (context) => CompartirInformeScreen(informe: informe.toJson()),
       ),
     ).then((_) {
-      // Recargar informes cuando vuelva de la pantalla de compartir
       _loadInformes();
     });
   }
@@ -1261,7 +1238,6 @@ class _InformesScreenState extends State<InformesScreen> {
                 ),
               ),
             ),
-            // Información del informe
             Expanded(
               flex: 2,
               child: Padding(
@@ -1674,10 +1650,10 @@ class _InformesScreenState extends State<InformesScreen> {
             icon: const Icon(Icons.share),
             onPressed: () async {
               final token = await _authStorage.getToken();
-              if (!mounted) return;
+              if (!context.mounted) return;
 
               if (token == null) {
-                if (!mounted) return;
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Debes iniciar sesión para ver permisos'),
@@ -1687,7 +1663,7 @@ class _InformesScreenState extends State<InformesScreen> {
                 return;
               }
 
-              if (!mounted) return;
+              if (!context.mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(

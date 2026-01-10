@@ -26,7 +26,6 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
     try {
       final token = await _authStorage.getToken();
       if (token != null) {
-        // Llamamos al endpoint que ya tienes listo en el backend
         final data = await _apiService.getEstadisticas(token);
         if (mounted) {
           setState(() {
@@ -72,12 +71,9 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Tarjeta Principal (La misma del Home)
                   _buildTTRCard(),
 
                   const SizedBox(height: 24),
-
-                  // 2. Título del Historial
                   const Text(
                     'Historial de Evolución',
                     style: TextStyle(
@@ -88,7 +84,6 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // 3. Lista de Mediciones (Aprovechando el backend)
                   _buildHistoryList(),
                 ],
               ),
@@ -112,8 +107,8 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isGood
-              ? Colors.green.withOpacity(0.3)
-              : Colors.orange.withOpacity(0.3),
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.orange.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -148,7 +143,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -172,7 +167,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                     ),
                   ],
@@ -216,7 +211,6 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
       );
     }
 
-    // Invertimos la lista para ver lo más reciente arriba
     final historialReverso = List.from(historial.reversed);
 
     return ListView.builder(
@@ -226,8 +220,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
       itemBuilder: (context, index) {
         final item = historialReverso[index];
         final double inr = (item['inr'] as num).toDouble();
-        final String estado =
-            item['estado'] ?? 'meta'; // 'bajo', 'meta', 'alto'
+        final String estado = item['estado'] ?? 'meta';
         final DateTime fecha = DateTime.parse(item['fecha']);
 
         Color colorEstado;
@@ -239,11 +232,11 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
           iconEstado = Icons.check_circle;
           textoEstado = 'En Rango';
         } else if (estado == 'bajo') {
-          colorEstado = Colors.blue; // Sangre espesa
+          colorEstado = Colors.blue;
           iconEstado = Icons.arrow_downward;
           textoEstado = 'Bajo';
         } else {
-          colorEstado = Colors.red; // Sangre líquida
+          colorEstado = Colors.red;
           iconEstado = Icons.arrow_upward;
           textoEstado = 'Alto';
         }
@@ -259,7 +252,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: colorEstado.withOpacity(0.1),
+                color: colorEstado.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(iconEstado, color: colorEstado, size: 20),
@@ -275,7 +268,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: colorEstado.withOpacity(0.1),
+                color: colorEstado.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(

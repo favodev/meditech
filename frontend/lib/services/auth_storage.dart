@@ -1,106 +1,119 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import '../models/user_model.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthStorage {
+  static const _storage = FlutterSecureStorage(
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+
   static const String _userKey = 'user_data';
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
+  static const String _keyTwoFactorSecret = '2fa_secret';
 
-  // Guardar usuario
   Future<void> saveUser(UserModel user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, jsonEncode(user.toJson()));
-    await prefs.setString(_tokenKey, user.accessToken);
-    await prefs.setString(_refreshTokenKey, user.refreshToken);
-  }
-
-  // Obtener usuario (siempre extrae el RUN del token)
-  Future<UserModel?> getUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString(_userKey);
-    final accessToken = prefs.getString(_tokenKey);
-    final refreshToken = prefs.getString(_refreshTokenKey);
-
-    if (userJson == null || accessToken == null || refreshToken == null) {
-      return null;
+    try {
+      await Future.wait([
+        _storage.write(key: _userKey, value: jsonEncode(user.toJson())),
+        _storage.write(key: _tokenKey, value: user.accessToken),
+        _storage.write(key: _refreshTokenKey, value: user.refreshToken),
+      ]);
+      debugPrint('Sesión guardada de forma segura');
+    } catch (e) {
+      debugPrint('Error al guardar sesión: $e');
+      rethrow;
     }
-
-    final userData = jsonDecode(userJson) as Map<String, dynamic>;
-
-    // Asegurarse de que los tokens estén en los datos para forzar la decodificación del JWT
-    final completeData = <String, dynamic>{
-      ...userData,
-      'accessToken': accessToken,
-      'refreshToken': refreshToken,
-    };
-
-    return UserModel.fromJson(completeData);
   }
 
-  // Recargar usuario desde el token (útil si el modelo cambió)
-  Future<UserModel?> reloadUserFromToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final accessToken = prefs.getString(_tokenKey);
-    final refreshToken = prefs.getString(_refreshTokenKey);
-
-    if (accessToken == null || refreshToken == null) {
-      return null;
-    }
-
-    // Obtener datos básicos del usuario guardado
-    final userJson = prefs.getString(_userKey);
-    if (userJson == null) {
-      return null;
-    }
-
-    final userData = jsonDecode(userJson) as Map<String, dynamic>;
-
-    // Recrear el usuario con los tokens actuales para forzar la decodificación del JWT
-    final refreshedData = <String, dynamic>{
-      ...userData,
-      'accessToken': accessToken,
-      'refreshToken': refreshToken,
-    };
-
-    final user = UserModel.fromJson(refreshedData);
-
-    // Guardar el usuario actualizado
-    await saveUser(user);
-
-    return user;
-  }
-
-  // Obtener token
-  Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
-  }
-
-  // Obtener refresh token
-  Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_refreshTokenKey);
-  }
-
-  // Actualizar tokens después de refresh
   Future<void> updateTokens(String accessToken, String refreshToken) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, accessToken);
-    await prefs.setString(_refreshTokenKey, refreshToken);
+    try {
+      await Future.wait([
+        _storage.write(key: _tokenKey, value: accessToken),
+        _storage.write(key: _refreshTokenKey, value: refreshToken),
+      ]);
+      debugPrint('Tokens actualizados de forma segura');
+    } catch (e) {
+      debugPrint('Error al actualizar tokens: $e');
+      rethrow;
+    }
   }
 
-  // Verificar si está logueado
+  // Obtener Token
+  Future<String?> getToken() async {
+    return await _storage.read(key: _tokenKey);
+  }
+
+  Future<String?> getRefreshToken() async {
+    return await _storage.read(key: _refreshTokenKey);
+  }
+
+  Future<UserModel?> getUser() async {
+    try {
+      final userJson = await _storage.read(key: _userKey);
+      final accessToken = await _storage.read(key: _tokenKey);
+      final refreshToken = await _storage.read(key: _refreshTokenKey);
+
+      if (userJson == null || accessToken == null || refreshToken == null) {
+        return null;
+      }
+
+      final userData = jsonDecode(userJson) as Map<String, dynamic>;
+      final completeData = <String, dynamic>{
+        ...userData,
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
+
+      return UserModel.fromJson(completeData);
+    } catch (e) {
+      debugPrint('Error al recuperar usuario: $e');
+      return null;
+    }
+  }
+
+  Future<UserModel?> reloadUserFromToken() async {
+    try {
+      final accessToken = await _storage.read(key: _tokenKey);
+      final refreshToken = await _storage.read(key: _refreshTokenKey);
+
+      if (accessToken == null || refreshToken == null) {
+        return null;
+      }
+
+      final dummyJson = <String, dynamic>{
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+        'usuario': {},
+      };
+
+      return UserModel.fromJson(dummyJson);
+    } catch (e) {
+      debugPrint('❌ Error al recargar usuario: $e');
+      return null;
+    }
+  }
+
+  Future<void> saveTwoFactorSecret(String secret) async {
+    await _storage.write(key: _keyTwoFactorSecret, value: secret);
+  }
+
+  Future<String?> getTwoFactorSecret() async {
+    return await _storage.read(key: _keyTwoFactorSecret);
+  }
+
+  Future<void> logout() async {
+    try {
+      await _storage.deleteAll();
+      debugPrint('✅ Datos de sesión eliminados de forma segura');
+    } catch (e) {
+      debugPrint('❌ Error en logout: $e');
+    }
+  }
+
   Future<bool> isLoggedIn() async {
     final token = await getToken();
     return token != null && token.isNotEmpty;
-  }
-
-  // Cerrar sesión
-  Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userKey);
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_refreshTokenKey);
   }
 }
