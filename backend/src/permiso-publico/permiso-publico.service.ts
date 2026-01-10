@@ -26,8 +26,9 @@ export class PermisoPublicoService {
   async create(
     runPaciente: string,
     dto: CreatePermisoPublicoDto,
-  ): Promise<{ Url: string; Qr: string }> {
-    const ttlMinutes = this.configService.get<number>('QR_EXPIRATION_MINUTES') || 60;
+  ): Promise<{ Url: string; Qr: string; ExpirationMinutes: number }> {
+    const ttlMinutes =
+      Number(this.configService.get<number>('QR_EXPIRATION_MINUTES')) || 60;
     const fechaLimite = new Date(Date.now() + ttlMinutes * 60 * 1000);
 
     const informeOriginal = await this.informeModel
@@ -86,7 +87,11 @@ export class PermisoPublicoService {
     await nuevoPermiso.save();
     const publicUrl = `${baseUrl}?token=${token}`;
 
-    return { Url: publicUrl, Qr: await qrcode.toDataURL(publicUrl) };
+    return {
+      Url: publicUrl,
+      Qr: await qrcode.toDataURL(publicUrl),
+      ExpirationMinutes: ttlMinutes,
+    };
   }
 
   async getPublicInforme(token: string) {

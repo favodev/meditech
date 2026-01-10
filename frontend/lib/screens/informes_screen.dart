@@ -1034,6 +1034,11 @@ class _InformesScreenState extends State<InformesScreen> {
         throw Exception('No se pudo generar la URL de compartir');
       }
 
+      final expirationMinutes = permiso['ExpirationMinutes'];
+      final minutosTexto = expirationMinutes != null
+          ? expirationMinutes.toString()
+          : '90';
+
       if (mounted) Navigator.pop(context);
       if (mounted) {
         showDialog(
@@ -1102,7 +1107,7 @@ class _InformesScreenState extends State<InformesScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Este QR expira en 90 minutos',
+                              'Este QR expira en $minutosTexto minutos',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.orange[900],
