@@ -119,15 +119,40 @@ export class InformeService {
 
   private fraccionANumero(texto: string): number {
     if (!texto) return 0;
-    const limpio = texto.trim();
 
-    if (limpio === '1/4') return 0.25;
-    if (limpio === '1/2') return 0.5;
-    if (limpio === '3/4') return 0.75;
-    if (limpio === '1') return 1;
-    if (limpio === '0' || limpio.toLowerCase() === 'sin dosis') return 0;
+    const limpio = texto.trim().replace(',', '.').replace(/\s+/g, ' ');
 
-    const numero = parseFloat(limpio);
-    return isNaN(numero) ? 0 : numero;
+    try {
+      if (limpio.includes(' ') && limpio.includes('/')) {
+        const partes = limpio.split(' ');
+        const entero = parseFloat(partes[0]);
+        const fraccion = partes[1].split('/');
+
+        if (fraccion.length === 2) {
+          const num = parseFloat(fraccion[0]);
+          const den = parseFloat(fraccion[1]);
+          if (den !== 0) {
+            return entero + num / den;
+          }
+        }
+      }
+
+      if (limpio.includes('/') && !limpio.includes(' ')) {
+        const partes = limpio.split('/');
+        if (partes.length === 2) {
+          const num = parseFloat(partes[0]);
+          const den = parseFloat(partes[1]);
+          if (den !== 0) {
+            return num / den;
+          }
+        }
+      }
+
+      const numero = parseFloat(limpio);
+      return isNaN(numero) ? 0 : numero;
+    } catch (e) {
+      return 0; 
+    }
   }
 }
+
