@@ -27,8 +27,8 @@ export class PermisoPublicoService {
     runPaciente: string,
     dto: CreatePermisoPublicoDto,
   ): Promise<{ Url: string; Qr: string }> {
-    const duracionMinutos = 90;
-    const fechaLimite = new Date(Date.now() + duracionMinutos * 60 * 1000);
+    const ttlMinutes = this.configService.get<number>('QR_EXPIRATION_MINUTES') || 60;
+    const fechaLimite = new Date(Date.now() + ttlMinutes * 60 * 1000);
 
     const informeOriginal = await this.informeModel
       .findById(dto.informe_id_original)
@@ -55,7 +55,7 @@ export class PermisoPublicoService {
         archivoDto.urlpath,
         archivoDto.nombre,
         archivoDto.formato,
-        duracionMinutos,
+        ttlMinutes,
       );
 
       archivosEmbebidos.push({
