@@ -10,6 +10,12 @@ import 'screens/two_factor_screen.dart';
 import 'screens/setup_2fa_screen.dart';
 import 'screens/two_factor_methods_screen.dart';
 import 'screens/reset_password_screen.dart';
+import 'screens/compartir_informe_screen.dart';
+import 'screens/configuracion_screen.dart';
+import 'screens/estadisticas_screen.dart';
+import 'screens/informes_screen.dart';
+import 'screens/permisos_compartidos_screen.dart';
+import 'screens/qr_scanner_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -62,6 +68,35 @@ class MyApp extends StatelessWidget {
           );
         }
 
+        // Nuevas rutas con argumentos
+        if (settings.name == '/compartir-informe') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return PageRouteBuilder(
+            settings: settings,
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                CompartirInformeScreen(informe: args),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+            transitionDuration: const Duration(milliseconds: 500),
+          );
+        }
+
+        if (settings.name == '/informes') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return PageRouteBuilder(
+            settings: settings,
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                InformesScreen(initialFilter: args?['filter']),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+            transitionDuration: const Duration(milliseconds: 500),
+          );
+        }
+
         final routes = <String, WidgetBuilder>{
           '/': (context) => const SplashScreen(),
           '/home': (context) => const MainScreen(),
@@ -71,6 +106,11 @@ class MyApp extends StatelessWidget {
           '/change-password': (context) => const ChangePasswordScreen(),
           '/2fa-methods': (context) => const TwoFactorMethodsScreen(),
           '/setup-2fa': (context) => const Setup2FAScreen(),
+          '/configuracion': (context) => const ConfiguracionScreen(),
+          '/estadisticas': (context) => const EstadisticasScreen(),
+          '/permisos-compartidos': (context) =>
+              const PermisosCompartidosScreen(),
+          '/qr-scanner': (context) => const QRScannerScreen(),
         };
 
         final builder = routes[settings.name];
