@@ -72,50 +72,37 @@ export class EstadisticasService {
   ): number {
     if (historial.length < 2) return 0;
 
-    let totalDias = 0;
+    let totalDiasEvaluados = 0;
     let diasEnRango = 0;
+    const LIMITE_DIAS_ROSENDAAL = 56;
 
     for (let i = 0; i < historial.length - 1; i++) {
-      const control1 = historial[i];
-      const control2 = historial[i + 1];
+      const fechaInicio = new Date(historial[i].fecha);
+      const fechaFin = new Date(historial[i + 1].fecha);
+      const inrInicio = historial[i].inr;
+      const inrFin = historial[i + 1].inr;
 
-      const diffTime = control2.fecha.getTime() - control1.fecha.getTime();
-      const diasIntervalo = diffTime / (1000 * 3600 * 24);
+      const diferenciaTiempo = fechaFin.getTime() - fechaInicio.getTime();
+      const diasIntervalo = Math.ceil(diferenciaTiempo / (1000 * 60 * 60 * 24));
 
-      if (diasIntervalo <= 0) continue;
-
-      const inrInicial = control1.inr;
-      const inrFinal = control2.inr;
-
-      if (
-        inrInicial >= min &&
-        inrInicial <= max &&
-        inrFinal >= min &&
-        inrFinal <= max
-      ) {
-        diasEnRango += diasIntervalo;
-      } else if (
-        (inrInicial < min && inrFinal < min) ||
-        (inrInicial > max && inrFinal > max)
-      ) {
-        diasEnRango += 0;
-      } else {
-        const cambioPorDia = (inrFinal - inrInicial) / diasIntervalo;
-
-        let inrActual = inrInicial;
-        for (let d = 0; d < diasIntervalo; d++) {
-          if (inrActual >= min && inrActual <= max) {
-            diasEnRango += 1;
-          }
-          inrActual += cambioPorDia;
-        }
+      if (diasIntervalo > LIMITE_DIAS_ROSENDAAL || diasIntervalo <= 0) {
+        continue;
       }
 
-      totalDias += diasIntervalo;
+      totalDiasEvaluados += diasIntervalo;
+      const pendiente = (inrFin - inrInicio) / diasIntervalo;
+
+      for (let j = 0; j < diasIntervalo; j++) {
+        const inrInterpolado = inrInicio + pendiente * j;
+        if (inrInterpolado >= min && inrInterpolado <= max) {
+          diasEnRango++;
+        }
+      }
     }
 
-    if (totalDias === 0) return 0;
-
-    return Math.round((diasEnRango / totalDias) * 100);
+    return totalDiasEvaluados === 0
+      ? 0
+      : parseFloat(((diasEnRango / totalDiasEvaluados) * 100).toFixed(2));
   }
 }
+
