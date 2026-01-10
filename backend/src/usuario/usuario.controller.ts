@@ -32,4 +32,10 @@ export class UsuarioController {
       updateProfileDto,
     );
   }
+
+  @Get('dosis-semanal')
+  async getDosisSemanal(@Request() req) {
+    const userId = req.user.userId;
+    return this.usuarioService.calcularDosisSemanal(userId);
+  }
 }
