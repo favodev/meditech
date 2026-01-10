@@ -16,6 +16,9 @@ import { PermisoPublicoModule } from '@permiso-publico/permiso-publico.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     DatabaseModule,
     UsuarioModule,
     InstitucionModule,
@@ -23,15 +26,12 @@ import { PermisoPublicoModule } from '@permiso-publico/permiso-publico.module';
     InformeModule,
     PermisoCompartirModule,
     StorageModule,
-    SeedModule,
     EspecialidadModule,
     TipoArchivoModule,
     TipoInformeModule,
     TipoInstitucionModule,
     PermisoPublicoModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
+    ...(process.env.NODE_ENV !== 'production' ? [SeedModule] : []),
   ],
 })
 export class AppModule {}
