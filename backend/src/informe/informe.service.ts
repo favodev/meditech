@@ -19,8 +19,8 @@ export class InformeService {
   }
 
   async create(
-    runPaciente: string, // Recibido del controller
-    runMedico: string, // Recibido del controller
+    runPaciente: string, 
+    runMedico: string, 
     dto: CreateInformeDto,
     files?: Express.Multer.File[],
   ): Promise<Informe> {
@@ -52,11 +52,12 @@ export class InformeService {
     }
 
     if (files && files.length > 0) {
-      for (const file of files) {
+      const uploadPromises = files.map(async (file) => {
         const sanitizedName = file.originalname
           .toLowerCase()
           .replace(/\s+/g, '-')
           .replace(/[^a-z0-9.\-]/g, '');
+
         const path = await this.storageService.uploadFile(
           file,
           informeData.id,
@@ -64,19 +65,22 @@ export class InformeService {
         );
 
         let tipoArchivo = 'Documento Adjunto';
-
         if (dto.tipo_informe === 'Control de Anticoagulación') {
           tipoArchivo = 'Resultado INR';
         }
 
-        informeData.archivos.push({
+        return {
           nombre: file.originalname,
           tipo: tipoArchivo,
           formato: file.mimetype,
           urlpath: path,
-        });
-      }
+        };
+      });
+
+      const fileDetails = await Promise.all(uploadPromises);
+      informeData.archivos = fileDetails;
     }
+
     return informeData.save();
   }
 

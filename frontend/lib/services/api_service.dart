@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../models/tipo_informe_model.dart';
+import '../models/informe_model.dart';
 import 'auth_storage.dart';
 
 class ApiService {
@@ -35,7 +36,7 @@ class ApiService {
 
     if (response.statusCode == 401) {
       if (_refreshFuture == null) {
-        debugPrint('🔄 Token expirado, iniciando renovación...');
+        debugPrint('Token expirado, iniciando renovación...');
         _refreshFuture = _refreshTokenFlow();
       }
 
@@ -72,7 +73,7 @@ class ApiService {
         data['accessToken'],
         data['refreshToken'],
       );
-      debugPrint('✅ Token renovado exitosamente');
+      debugPrint('Token renovado exitosamente');
     } else {
       throw Exception('Sesión expirada');
     }
@@ -120,7 +121,7 @@ class ApiService {
     }
   }
 
-  // Register Unificado - según el backend usa UnifiedRegisterDto
+  // Register Unificado
   Future<Map<String, dynamic>> register({
     required String tipoUsuario,
     required String nombre,
@@ -174,7 +175,7 @@ class ApiService {
   // Obtener perfil del usuario autenticado
   Future<Map<String, dynamic>> getUserProfile(String token) async {
     try {
-      debugPrint('📤 Obteniendo perfil de usuario...');
+      debugPrint('Obteniendo perfil de usuario...');
       final response = await http.get(
         Uri.parse('$baseUrl/usuario/me'),
         headers: {
@@ -185,14 +186,14 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        debugPrint('✅ Perfil obtenido exitosamente');
+        debugPrint('Perfil obtenido exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(error['message'] ?? 'Error al obtener perfil');
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener perfil: $e');
+      debugPrint('Error al obtener perfil: $e');
       if (e.toString().contains('Exception:')) {
         rethrow;
       }
@@ -203,7 +204,7 @@ class ApiService {
   // Obtener estadísticas del paciente (TTR, Rango Meta)
   Future<Map<String, dynamic>> getEstadisticas(String token) async {
     try {
-      debugPrint('📥 Obteniendo estadísticas clínicas...');
+      debugPrint('Obteniendo estadísticas clínicas...');
       final response = await http.get(
         Uri.parse('$baseUrl/informe/estadisticas'),
         headers: {
@@ -214,16 +215,16 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint('✅ Estadísticas obtenidas');
+        debugPrint('Estadísticas obtenidas');
         return data;
       } else {
         debugPrint(
-          '⚠️ No se pudieron cargar estadísticas: ${response.statusCode}',
+          'No se pudieron cargar estadísticas: ${response.statusCode}',
         );
         return {};
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener estadísticas: $e');
+      debugPrint('Error al obtener estadísticas: $e');
       return {};
     }
   }
@@ -240,10 +241,8 @@ class ApiService {
         Uri.parse('$baseUrl/storage/upload'),
       );
 
-      // Agregar headers con token JWT
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Agregar el archivo
       final fileExtension = file.path.split('.').last.toLowerCase();
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -260,8 +259,7 @@ class ApiService {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // El backend retorna directamente el path del archivo como string
-        return response.body.replaceAll('"', ''); // Quitar comillas si las hay
+        return response.body.replaceAll('"', '');
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['message'] ?? 'Error al subir archivo');
@@ -338,7 +336,7 @@ class ApiService {
     required String token,
   }) async {
     try {
-      debugPrint('📤 Creando informe con ${files?.length ?? 0} archivo(s)');
+      debugPrint('Creando informe con ${files?.length ?? 0} archivo(s)');
 
       var request = http.MultipartRequest(
         'POST',
@@ -348,7 +346,6 @@ class ApiService {
       // Agregar headers con token JWT
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Agregar los datos del informe como JSON en el campo 'data'
       final informeData = {
         'titulo': titulo,
         'tipo_informe': tipoInforme,
@@ -360,12 +357,11 @@ class ApiService {
 
       request.fields['data'] = jsonEncode(informeData);
 
-      debugPrint('📋 Datos del informe: $informeData');
-      debugPrint('📋 JSON enviado: ${jsonEncode(informeData)}');
+      debugPrint('Datos del informe: $informeData');
+      debugPrint('JSON enviado: ${jsonEncode(informeData)}');
 
-      // Agregar los archivos con el nombre 'files' (plural)
       if (files != null && files.isNotEmpty) {
-        debugPrint('📎 Agregando archivos al request:');
+        debugPrint('Agregando archivos al request:');
         for (var file in files) {
           final fileExtension = file.path.split('.').last.toLowerCase();
           final fileName = file.path.split(Platform.pathSeparator).last;
@@ -376,7 +372,6 @@ class ApiService {
           debugPrint('    Tamaño: ${await file.length()} bytes');
           debugPrint('    Extensión: $fileExtension');
 
-          // Determinar el Content-Type correcto según la extensión
           MediaType contentType;
           switch (fileExtension) {
             case 'pdf':
@@ -417,36 +412,35 @@ class ApiService {
               contentType = MediaType('application', 'octet-stream');
           }
 
-          // IMPORTANTE: El backend espera 'files' como nombre del campo
           request.files.add(
             await http.MultipartFile.fromPath(
-              'files', // ← Este nombre debe coincidir con el backend
+              'files',
               file.path,
               contentType: contentType,
-              filename: fileName, // ← Agregar filename explícitamente
+              filename: fileName,
             ),
           );
         }
-        debugPrint('✅ Total de archivos agregados: ${request.files.length}');
+        debugPrint('Total de archivos agregados: ${request.files.length}');
       } else {
-        debugPrint('⚠️ No hay archivos para subir');
+        debugPrint('No hay archivos para subir');
       }
 
-      debugPrint('📡 Enviando request a: ${request.url}');
-      debugPrint('📡 Headers: ${request.headers}');
-      debugPrint('� Fields: ${request.fields}');
-      debugPrint('📡 Files: ${request.files.map((f) => f.filename).toList()}');
+      debugPrint('Enviando request a: ${request.url}');
+      debugPrint('Headers: ${request.headers}');
+      debugPrint('Fields: ${request.fields}');
+      debugPrint('Files: ${request.files.map((f) => f.filename).toList()}');
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('Respuesta del servidor:');
       debugPrint('  Status: ${response.statusCode}');
       debugPrint('  Body: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        debugPrint('✅ Informe creado exitosamente');
+        debugPrint('Informe creado exitosamente');
         debugPrint('  ID del informe: ${result['_id']}');
         debugPrint(
           '  Archivos en respuesta: ${result['archivos']?.length ?? 0}',
@@ -454,12 +448,43 @@ class ApiService {
         return result;
       } else {
         final error = jsonDecode(response.body);
-        debugPrint('❌ Error del servidor: $error');
+        debugPrint('Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al crear informe');
       }
     } catch (e) {
-      debugPrint('❌ Error al crear informe: $e');
+      debugPrint('Error al crear informe: $e');
       rethrow;
+    }
+  }
+
+  Future<void> crearInforme(Informe informe, List<File> files) async {
+    final token = await _authStorage.getToken();
+    if (token == null) throw Exception('No hay token');
+
+    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/informe'));
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['data'] = jsonEncode(informe.toJson());
+
+    for (var file in files) {
+      final mimeType = file.path.endsWith('.pdf')
+          ? MediaType('application', 'pdf')
+          : MediaType('image', 'jpeg');
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'files',
+          file.path,
+          contentType: mimeType,
+        ),
+      );
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 201) {
+      throw Exception('Error al crear informe: ${response.body}');
     }
   }
 
@@ -474,7 +499,6 @@ class ApiService {
         },
       );
     } catch (e) {
-      // Ignorar errores en logout
       debugPrint('Error en logout: $e');
     }
   }
@@ -482,7 +506,7 @@ class ApiService {
   // Obtener informes del usuario autenticado
   Future<List<Map<String, dynamic>>> getInformes(String token) async {
     try {
-      debugPrint('📥 Obteniendo informes del usuario...');
+      debugPrint('Obteniendo informes del usuario...');
 
       final response = await _requestWithAutoRefresh((token) async {
         return await http.get(
@@ -494,21 +518,21 @@ class ApiService {
         );
       });
 
-      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('Respuesta del servidor:');
       debugPrint('  Status: ${response.statusCode}');
       debugPrint('  Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        debugPrint('✅ Informes obtenidos: ${data.length}');
+        debugPrint('Informes obtenidos: ${data.length}');
         return data.cast<Map<String, dynamic>>();
       } else {
         final error = jsonDecode(response.body);
-        debugPrint('❌ Error del servidor: $error');
+        debugPrint('Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al obtener informes');
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener informes: $e');
+      debugPrint('Error al obtener informes: $e');
       rethrow;
     }
   }
@@ -531,12 +555,10 @@ class ApiService {
     }
   }
 
-  // ===== GESTIÓN DE PERFIL =====
-
   // Obtener perfil del usuario autenticado
   Future<Map<String, dynamic>> getMyProfile(String token) async {
     try {
-      debugPrint('📥 Obteniendo perfil del usuario...');
+      debugPrint('Obteniendo perfil del usuario...');
 
       final response = await http.get(
         Uri.parse('$baseUrl/usuario/me'),
@@ -546,20 +568,20 @@ class ApiService {
         },
       );
 
-      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('Respuesta del servidor:');
       debugPrint('  Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint('✅ Perfil obtenido exitosamente');
+        debugPrint('Perfil obtenido exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body);
-        debugPrint('❌ Error del servidor: $error');
+        debugPrint('Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al obtener perfil');
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener perfil: $e');
+      debugPrint('Error al obtener perfil: $e');
       rethrow;
     }
   }
@@ -570,7 +592,7 @@ class ApiService {
     Map<String, dynamic> updates,
   ) async {
     try {
-      debugPrint('📤 Actualizando perfil del usuario...');
+      debugPrint('Actualizando perfil del usuario...');
       debugPrint('  Datos: $updates');
 
       final response = await http.patch(
@@ -582,20 +604,20 @@ class ApiService {
         body: jsonEncode(updates),
       );
 
-      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('Respuesta del servidor:');
       debugPrint('  Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint('✅ Perfil actualizado exitosamente');
+        debugPrint('Perfil actualizado exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body);
-        debugPrint('❌ Error del servidor: $error');
+        debugPrint('Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al actualizar perfil');
       }
     } catch (e) {
-      debugPrint('❌ Error al actualizar perfil: $e');
+      debugPrint('Error al actualizar perfil: $e');
       rethrow;
     }
   }
@@ -607,7 +629,7 @@ class ApiService {
     String newPassword,
   ) async {
     try {
-      debugPrint('📤 Cambiando contraseña...');
+      debugPrint('Cambiando contraseña...');
 
       final response = await http.patch(
         Uri.parse('$baseUrl/change-password'),
@@ -621,30 +643,28 @@ class ApiService {
         }),
       );
 
-      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('Respuesta del servidor:');
       debugPrint('  Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        debugPrint('✅ Contraseña cambiada exitosamente');
+        debugPrint('Contraseña cambiada exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body);
-        debugPrint('❌ Error del servidor: $error');
+        debugPrint('Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al cambiar contraseña');
       }
     } catch (e) {
-      debugPrint('❌ Error al cambiar contraseña: $e');
+      debugPrint('Error al cambiar contraseña: $e');
       rethrow;
     }
   }
 
-  // ===== INSTITUCIONES =====
-
   // Obtener todas las instituciones
   Future<List<Map<String, dynamic>>> getInstituciones() async {
     try {
-      debugPrint('📥 Obteniendo instituciones...');
+      debugPrint('Obteniendo instituciones...');
 
       final response = await http.get(
         Uri.parse('$baseUrl/institucion'),
@@ -653,14 +673,14 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        debugPrint('✅ Instituciones obtenidas: ${data.length}');
+        debugPrint('Instituciones obtenidas: ${data.length}');
         return data.cast<Map<String, dynamic>>();
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['message'] ?? 'Error al obtener instituciones');
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener instituciones: $e');
+      debugPrint('Error al obtener instituciones: $e');
       rethrow;
     }
   }
@@ -684,8 +704,6 @@ class ApiService {
     }
   }
 
-  // ===== PERMISOS COMPARTIR =====
-
   // Compartir informe con un médico
   Future<Map<String, dynamic>> compartirInforme({
     required String token,
@@ -696,7 +714,7 @@ class ApiService {
     List<Map<String, dynamic>>? archivos,
   }) async {
     try {
-      debugPrint('📤 Compartiendo informe...');
+      debugPrint('Compartiendo informe...');
       debugPrint('  RUN Médico: $runMedico');
       debugPrint('  Informe ID: $informeIdOriginal');
       debugPrint('  Nivel Acceso: $nivelAcceso');
@@ -724,20 +742,20 @@ class ApiService {
         body: jsonEncode(body),
       );
 
-      debugPrint('📥 Respuesta del servidor:');
+      debugPrint('Respuesta del servidor:');
       debugPrint('  Status: ${response.statusCode}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint('✅ Informe compartido exitosamente');
+        debugPrint('Informe compartido exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body);
-        debugPrint('❌ Error del servidor: $error');
+        debugPrint('Error del servidor: $error');
         throw Exception(error['message'] ?? 'Error al compartir informe');
       }
     } catch (e) {
-      debugPrint('❌ Error al compartir informe: $e');
+      debugPrint('Error al compartir informe: $e');
       rethrow;
     }
   }
@@ -745,7 +763,7 @@ class ApiService {
   // Obtener permisos compartidos
   Future<List<dynamic>> getPermisosCompartidos(String token) async {
     try {
-      debugPrint('📥 Obteniendo permisos compartidos...');
+      debugPrint('Obteniendo permisos compartidos...');
 
       final response = await _requestWithAutoRefresh((token) async {
         return await http.get(
@@ -759,22 +777,22 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        debugPrint('✅ Permisos obtenidos: ${data.length}');
+        debugPrint('Permisos obtenidos: ${data.length}');
         return data;
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['message'] ?? 'Error al obtener permisos');
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener permisos: $e');
+      debugPrint('Error al obtener permisos: $e');
       rethrow;
     }
   }
 
-  // Revocar/actualizar permiso (cambiar activo a false)
+  // Revocar/actualizar permiso
   Future<void> revocarPermiso(String token, String permisoId) async {
     try {
-      debugPrint('📤 Revocando permiso: $permisoId');
+      debugPrint('Revocando permiso: $permisoId');
 
       final response = await http.patch(
         Uri.parse('$baseUrl/permiso-compartir/$permisoId'),
@@ -786,13 +804,13 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        debugPrint('✅ Permiso revocado');
+        debugPrint('Permiso revocado');
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['message'] ?? 'Error al revocar permiso');
       }
     } catch (e) {
-      debugPrint('❌ Error al revocar permiso: $e');
+      debugPrint('Error al revocar permiso: $e');
       rethrow;
     }
   }
@@ -800,7 +818,7 @@ class ApiService {
   // Eliminar permiso
   Future<void> deletePermiso(String token, String permisoId) async {
     try {
-      debugPrint('🗑️ Eliminando permiso: $permisoId');
+      debugPrint('Eliminando permiso: $permisoId');
 
       final response = await http.delete(
         Uri.parse('$baseUrl/permiso-compartir/$permisoId'),
@@ -811,13 +829,13 @@ class ApiService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        debugPrint('✅ Permiso eliminado');
+        debugPrint('Permiso eliminado');
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['message'] ?? 'Error al eliminar permiso');
       }
     } catch (e) {
-      debugPrint('❌ Error al eliminar permiso: $e');
+      debugPrint('Error al eliminar permiso: $e');
       rethrow;
     }
   }
@@ -827,7 +845,7 @@ class ApiService {
     required String token,
   }) async {
     try {
-      debugPrint('📤 Creando permiso público para QR...');
+      debugPrint('Creando permiso público para QR...');
 
       final response = await http.post(
         Uri.parse('$baseUrl/permiso-publico'),
@@ -841,34 +859,34 @@ class ApiService {
         }),
       );
 
-      debugPrint('📥 Status code: ${response.statusCode}');
-      debugPrint('📥 Response body: ${response.body}');
+      debugPrint('Status code: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint('✅ Permiso público creado - Response completo: $data');
-        debugPrint('✅ URL generada: ${data['Url']}');
+        debugPrint('Permiso público creado - Response completo: $data');
+        debugPrint('URL generada: ${data['Url']}');
         return data;
       } else {
         try {
           final error = jsonDecode(response.body);
-          debugPrint('❌ Error del servidor: ${error['message']}');
-          debugPrint('❌ Error completo: $error');
+          debugPrint('Error del servidor: ${error['message']}');
+          debugPrint('Error completo: $error');
           throw Exception(error['message'] ?? 'Error al crear permiso público');
         } catch (jsonError) {
-          debugPrint('❌ Error parseando respuesta: $jsonError');
+          debugPrint('Error parseando respuesta: $jsonError');
           throw Exception('Error al crear permiso público: ${response.body}');
         }
       }
     } catch (e) {
-      debugPrint('❌ Error al crear permiso público: $e');
+      debugPrint('Error al crear permiso público: $e');
       rethrow;
     }
   }
 
   Future<Map<String, dynamic>> getInformePublico(String token) async {
     try {
-      debugPrint('📥 Obteniendo informe público con token: $token');
+      debugPrint('Obteniendo informe público con token: $token');
 
       final response = await http.get(
         Uri.parse('$baseUrl/permiso-publico/ver?token=$token'),
@@ -876,21 +894,21 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint('✅ Informe público obtenido');
+        debugPrint('Informe público obtenido');
         return data;
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['message'] ?? 'Error al obtener informe público');
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener informe público: $e');
+      debugPrint('Error al obtener informe público: $e');
       rethrow;
     }
   }
 
   Future<List<Map<String, dynamic>>> getTiposArchivo(String token) async {
     try {
-      debugPrint('📥 Obteniendo tipos de archivo...');
+      debugPrint('Obteniendo tipos de archivo...');
 
       final response = await _requestWithAutoRefresh((token) async {
         return await http.get(
@@ -904,7 +922,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        debugPrint('✅ Tipos de informe obtenidos: ${data.length}');
+        debugPrint('Tipos de informe obtenidos: ${data.length}');
         return data.cast<Map<String, dynamic>>();
       } else {
         final error = jsonDecode(response.body);
@@ -913,14 +931,14 @@ class ApiService {
         );
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener tipos de archivo: $e');
+      debugPrint('Error al obtener tipos de archivo: $e');
       rethrow;
     }
   }
 
   Future<List<Map<String, dynamic>>> getEspecialidades() async {
     try {
-      debugPrint('📥 Obteniendo especialidades...');
+      debugPrint('Obteniendo especialidades...');
 
       final response = await http.get(
         Uri.parse('$baseUrl/especialidad'),
@@ -929,21 +947,21 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        debugPrint('✅ Especialidades obtenidas: ${data.length}');
+        debugPrint('Especialidades obtenidas: ${data.length}');
         return data.cast<Map<String, dynamic>>();
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['message'] ?? 'Error al obtener especialidades');
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener especialidades: $e');
+      debugPrint('Error al obtener especialidades: $e');
       rethrow;
     }
   }
 
   Future<List<Map<String, dynamic>>> getTiposInstitucion() async {
     try {
-      debugPrint('📥 Obteniendo tipos de institución...');
+      debugPrint('Obteniendo tipos de institución...');
 
       final response = await http.get(
         Uri.parse('$baseUrl/tipo-institucion'),
@@ -952,7 +970,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        debugPrint('✅ Tipos de institución obtenidos: ${data.length}');
+        debugPrint('Tipos de institución obtenidos: ${data.length}');
         return data.cast<Map<String, dynamic>>();
       } else {
         final error = jsonDecode(response.body);
@@ -961,14 +979,14 @@ class ApiService {
         );
       }
     } catch (e) {
-      debugPrint('❌ Error al obtener tipos de institución: $e');
+      debugPrint('Error al obtener tipos de institución: $e');
       rethrow;
     }
   }
 
   Future<Map<String, dynamic>> setup2FA(String token) async {
     try {
-      debugPrint('📤 Configurando 2FA...');
+      debugPrint('Configurando 2FA...');
       final response = await http.post(
         Uri.parse('$baseUrl/2fa/setup'),
         headers: {
@@ -979,14 +997,14 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        debugPrint('✅ 2FA configurado: QR generado');
+        debugPrint('2FA configurado: QR generado');
         return data;
       } else {
         final error = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(error['message'] ?? 'Error al configurar 2FA');
       }
     } catch (e) {
-      debugPrint('❌ Error al configurar 2FA: $e');
+      debugPrint('Error al configurar 2FA: $e');
       if (e.toString().contains('Exception:')) {
         rethrow;
       }
@@ -999,7 +1017,7 @@ class ApiService {
     required String code,
   }) async {
     try {
-      debugPrint('📤 Verificando y activando 2FA...');
+      debugPrint('Verificando y activando 2FA...');
       final response = await http.post(
         Uri.parse('$baseUrl/2fa/verify-and-enable'),
         headers: {
@@ -1011,14 +1029,14 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        debugPrint('✅ 2FA activado exitosamente');
+        debugPrint('2FA activado exitosamente');
         return data;
       } else {
         final error = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(error['message'] ?? 'Código 2FA inválido');
       }
     } catch (e) {
-      debugPrint('❌ Error al activar 2FA: $e');
+      debugPrint('Error al activar 2FA: $e');
       if (e.toString().contains('Exception:')) {
         rethrow;
       }
@@ -1031,7 +1049,7 @@ class ApiService {
     required String code,
   }) async {
     try {
-      debugPrint('📤 Verificando código 2FA en login...');
+      debugPrint('Verificando código 2FA en login...');
       final response = await http.post(
         Uri.parse('$baseUrl/2fa/login-verify'),
         headers: {'Content-Type': 'application/json'},
@@ -1040,15 +1058,15 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        debugPrint('✅ Login 2FA exitoso');
-        debugPrint('📦 Data recibida: $data');
+        debugPrint('Login 2FA exitoso');
+        debugPrint('Data recibida: $data');
         return data;
       } else {
         final error = jsonDecode(response.body) as Map<String, dynamic>;
         throw Exception(error['message'] ?? 'Código 2FA incorrecto');
       }
     } catch (e) {
-      debugPrint('❌ Error en login 2FA: $e');
+      debugPrint('Error en login 2FA: $e');
       if (e.toString().contains('Exception:')) {
         rethrow;
       }
