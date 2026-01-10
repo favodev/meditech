@@ -5,9 +5,13 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import { TipoUsuario } from '@enums/tipo_usuario.enum';
 import { IsRUT } from '@decorator/rut.decorators';
+import { Type } from 'class-transformer';
+import { CreatePacienteDetailsDto } from './create-paciente-details.dto';
+import { CreateMedicoDetailsDto } from './create-medico-details.dto';
 
 export class RegisterDto {
   @IsString()
@@ -40,4 +44,14 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   run: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreatePacienteDetailsDto)
+  paciente_detalle?: CreatePacienteDetailsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateMedicoDetailsDto)
+  medico_detalle?: CreateMedicoDetailsDto;
 }
