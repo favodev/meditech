@@ -16,6 +16,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   Map<String, dynamic>? _profileData;
+  List<Map<String, dynamic>> _especialidades = [];
 
   // Controladores de texto
   final _nombreController = TextEditingController();
@@ -39,7 +40,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await Future.wait([_loadProfile(), _loadEspecialidades()]);
+  }
+
+  Future<void> _loadEspecialidades() async {
+    try {
+      final especialidades = await _apiService.getEspecialidades();
+      if (mounted) {
+        setState(() {
+          _especialidades = especialidades;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error cargando especialidades: $e');
+    }
   }
 
   @override
@@ -551,41 +569,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.medical_services),
                       ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'Cardiologia',
-                          child: Text('Cardiología'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Dermatologia',
-                          child: Text('Dermatología'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Ginecologia',
-                          child: Text('Ginecología'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Medicina_General',
-                          child: Text('Medicina General'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Neurologia',
-                          child: Text('Neurología'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Pediatria',
-                          child: Text('Pediatría'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Psiquiatria',
-                          child: Text('Psiquiatría'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Traumatologia',
-                          child: Text('Traumatología'),
-                        ),
-                        DropdownMenuItem(value: 'Otra', child: Text('Otra')),
-                      ],
+                      items: _especialidades.map((esp) {
+                        return DropdownMenuItem<String>(
+                          value: esp['nombre'],
+                          child: Text(esp['nombre']),
+                        );
+                      }).toList(),
                       onChanged: (value) {
                         setState(() {
                           _especialidad = value;
