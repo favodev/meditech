@@ -8,10 +8,12 @@ import {
   PermisoCompartirSchema,
 } from './entities/permiso-compartir.schema';
 import { InformeModule } from '@informe/informe.module';
+import { UsuarioModule } from '@usuario/usuario.module';
 
 @Module({
   imports: [
     InformeModule,
+    UsuarioModule,
     MongooseModule.forFeature([
       { name: PermisoCompartir.name, schema: PermisoCompartirSchema },
     ]),

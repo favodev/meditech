@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { PermisoCompartir } from './entities/permiso-compartir.schema';
 import { Informe } from '@informe/entities/informe.schema';
 import { CreatePermisoCompartirDto } from './dto/create-permiso-compartir.dto';
+import { Usuario } from '@usuario/entities/usuario.schema';
 
 @Injectable()
 export class PermisoCompartirService {
@@ -12,7 +13,56 @@ export class PermisoCompartirService {
     private permisoModel: Model<PermisoCompartir>,
 
     @InjectModel(Informe.name) private informeModel: Model<Informe>,
+
+    @InjectModel(Usuario.name) private userModel: Model<Usuario>,
   ) {}
+
+  async createFormalAccess(
+    patientRun: string,
+    doctorRun: string,
+    reportId: string,
+    expiryDays: number,
+  ): Promise<PermisoCompartir> {
+    const doctor = await this.userModel.findOne({
+      run: doctorRun,
+      tipo_usuario: 'medico',
+    });
+
+    if (!doctor) {
+      throw new NotFoundException(
+        'El profesional no se encuentra registrado en el sistema',
+      );
+    }
+
+    const report = await this.informeModel.findById(reportId);
+    if (!report) {
+      throw new NotFoundException('Informe no encontrado');
+    }
+
+    const expiration = new Date();
+    expiration.setDate(expiration.getDate() + expiryDays);
+
+    const informeEmbebido = {
+      titulo: report.titulo,
+      tipo_informe: report.tipo_informe,
+      observaciones: report.observaciones,
+      contenido_clinico: report.contenido_clinico,
+      archivos: report.archivos,
+    };
+
+    return this.permisoModel.findOneAndUpdate(
+      { informe_id_original: reportId, run_medico: doctorRun },
+      {
+        informe_id_original: reportId,
+        run_paciente: patientRun,
+        run_medico: doctorRun,
+        nivel_acceso: 'lectura',
+        fecha_limite: expiration,
+        informe: informeEmbebido,
+      },
+      { upsert: true, new: true },
+    );
+  }
 
   async create(
     runPaciente: string,

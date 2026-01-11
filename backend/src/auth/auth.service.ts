@@ -95,7 +95,22 @@ export class AuthService {
         throw new UnauthorizedException('Tipo de usuario no válido');
     }
 
-    return user.save();
+    try {
+      return await user.save();
+    } catch (error) {
+      if (error.code === 11000) {
+        if (error.keyPattern?.email) {
+          throw new ForbiddenException('El correo electrónico ya está registrado.');
+        }
+        if (error.keyPattern?.run) {
+          throw new ForbiddenException('El RUN ya está registrado.');
+        }
+        throw new ForbiddenException('El usuario ya existe (dato duplicado).');
+      }
+      throw new InternalServerErrorException(
+        `Error al crear usuario: ${error.message}`,
+      );
+    }
   }
 
   async refreshToken(userId: string, refreshToken: string) {

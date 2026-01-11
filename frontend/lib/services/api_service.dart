@@ -1117,4 +1117,27 @@ class ApiService {
       throw Exception('Error de conexión: $e');
     }
   }
+
+  Future<bool> shareReportFormal(
+    String doctorRun,
+    String reportId,
+    int expiryDays,
+  ) async {
+    final response = await _requestWithAutoRefresh((token) {
+      return http.post(
+        Uri.parse('$baseUrl/permiso-compartir/formal'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'doctorRun': doctorRun,
+          'reportId': reportId,
+          'expiryDays': expiryDays,
+        }),
+      );
+    });
+
+    return response.statusCode == 201 || response.statusCode == 200;
+  }
 }
