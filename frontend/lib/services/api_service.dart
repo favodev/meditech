@@ -789,6 +789,30 @@ class ApiService {
     }
   }
 
+  Future<void> updateSharedReport(
+    String token,
+    String permisoId,
+    Map<String, dynamic> updates,
+  ) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/permiso-compartir/$permisoId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(updates),
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Error al actualizar informe');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
   // Revocar/actualizar permiso
   Future<void> revocarPermiso(String token, String permisoId) async {
     try {

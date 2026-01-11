@@ -28,7 +28,6 @@ class _CompartirInformeScreenState extends State<CompartirInformeScreen> {
   @override
   void initState() {
     super.initState();
-    // Por defecto, seleccionar todos los archivos
     final archivos = widget.informe['archivos'] as List?;
     if (archivos != null) {
       _archivosSeleccionados = archivos.map((archivo) {
@@ -36,6 +35,10 @@ class _CompartirInformeScreenState extends State<CompartirInformeScreen> {
           'nombre': archivo['nombre'],
           'formato': archivo['formato'],
           'urlpath': archivo['urlpath'],
+          'tipo':
+              (archivo['tipo'] != null && archivo['tipo'].toString().isNotEmpty)
+              ? archivo['tipo']
+              : 'documento',
         };
       }).toList();
     }
@@ -232,7 +235,8 @@ class _CompartirInformeScreenState extends State<CompartirInformeScreen> {
                           return 'Por favor ingrese el RUT del médico';
                         }
                         final clean = cleanRut(value);
-                        if (clean.length < 8 || clean.length > 9) {
+
+                        if (clean.length < 7 || clean.length > 10) {
                           return 'RUT inválido';
                         }
                         return null;

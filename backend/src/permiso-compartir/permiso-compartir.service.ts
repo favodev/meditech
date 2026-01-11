@@ -88,7 +88,7 @@ export class PermisoCompartirService {
 
     const nuevoPermiso = new this.permisoModel({
       nivel_acceso: dto.nivel_acceso,
-      fecha_limite: dto.fecha_limite,
+      fecha_limite: dto.fecha_limite ?? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
       run_paciente: runPaciente,
       run_medico: dto.run_medico,
       informe_id_original: dto.informe_id_original,
@@ -105,5 +105,19 @@ export class PermisoCompartirService {
         fecha_limite: { $gte: new Date() },
       })
       .exec();
+  }
+
+  async updateObservaciones(
+    id: string,
+    observaciones: string,
+  ): Promise<PermisoCompartir> {
+    const permiso = await this.permisoModel.findById(id);
+    if (!permiso) {
+      throw new NotFoundException('Permiso no encontrado');
+    }
+
+    permiso.informe.observaciones = observaciones;
+
+    return permiso.save();
   }
 }

@@ -35,6 +35,7 @@ export class CreatePermisoCompartirDto {
   @IsNotEmpty()
   nivel_acceso: NivelAcceso;
 
+  @IsOptional()
   @IsDate()
   @Type(() => Date)
   fecha_limite?: Date;

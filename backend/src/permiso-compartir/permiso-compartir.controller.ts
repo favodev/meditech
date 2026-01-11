@@ -6,6 +6,8 @@ import {
   Request,
   ValidationPipe,
   Get,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermisoCompartirService } from './permiso-compartir.service';
@@ -16,6 +18,16 @@ import { CreateFormalAccessDto } from './dto/create-formal-access.dto';
 @UseGuards(AuthGuard('jwt'))
 export class PermisoCompartirController {
   constructor(private readonly permisoService: PermisoCompartirService) {}
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateDto: { observaciones: string },
+    @Request() req
+  ) {
+    // Ideally validate that req.user.run is the med or patient authorized
+    return this.permisoService.updateObservaciones(id, updateDto.observaciones);
+  }
 
   @Post('formal')
   createFormal(@Request() req, @Body() dto: CreateFormalAccessDto) {

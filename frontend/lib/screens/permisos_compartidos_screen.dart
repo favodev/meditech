@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage.dart';
+
+import 'package:meditech/screens/edit_shared_report_screen.dart';
 
 class PermisosCompartidosScreen extends StatefulWidget {
   const PermisosCompartidosScreen({super.key});
@@ -309,14 +312,15 @@ class _PermisosCompartidosScreenState extends State<PermisosCompartidosScreen> {
                           // Información del permiso
                           _buildInfoRow(
                             Icons.person,
-                            'Compartido con',
-                            'RUN: ${permiso['run_medico'] ?? 'N/A'}',
+                            'Paciente',
+                            'RUN: ${permiso['run_paciente'] ?? 'N/A'}',
                           ),
                           const SizedBox(height: 8),
                           _buildInfoRow(
                             Icons.security,
                             'Nivel de acceso',
-                            permiso['nivel_acceso'] ?? 'N/A',
+                            ((permiso['nivel_acceso'] as String?) ?? 'N/A')
+                                .toUpperCase(),
                           ),
                           const SizedBox(height: 8),
                           _buildInfoRow(
@@ -344,7 +348,23 @@ class _PermisosCompartidosScreenState extends State<PermisosCompartidosScreen> {
                           // Botones de acción
                           Row(
                             children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _showInformeDetails(
+                                    informe,
+                                    permiso,
+                                    index,
+                                  ),
+                                  icon: const Icon(Icons.folder_open),
+                                  label: const Text('Abrir'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2196F3),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ),
                               if (activo) ...[
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     onPressed: () =>
@@ -359,20 +379,7 @@ class _PermisosCompartidosScreenState extends State<PermisosCompartidosScreen> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
                               ],
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () =>
-                                      _eliminarPermiso(permiso['_id'], index),
-                                  icon: const Icon(Icons.delete),
-                                  label: const Text('Eliminar'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.red,
-                                    side: const BorderSide(color: Colors.red),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                         ],
@@ -383,6 +390,190 @@ class _PermisosCompartidosScreenState extends State<PermisosCompartidosScreen> {
               ),
             ),
     );
+  }
+
+  void _showInformeDetails(
+    Map<String, dynamic> informe,
+    dynamic permiso,
+    int index,
+  ) async {
+    // Check access level for editing
+    final nivelAcceso = ((permiso['nivel_acceso'] as String?) ?? '')
+        .toLowerCase();
+    final canEdit =
+        nivelAcceso == 'escritura' || nivelAcceso == 'administracion';
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  controller: controller,
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            informe['titulo'] ?? 'Sin Título',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        if (canEdit)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: () async {
+                                  Navigator.pop(context); // Close sheet
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => EditSharedReportScreen(
+                                        informe: informe,
+                                        permisoId: permiso['_id'],
+                                      ),
+                                    ),
+                                  );
+                                  if (result == true) {
+                                    _loadPermisos(); // Reload to see changes
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                tooltip: 'Eliminar',
+                                onPressed: () async {
+                                  Navigator.pop(context);
+                                  await _eliminarPermiso(permiso['_id'], index);
+                                },
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.medical_information, size: 16),
+                        const SizedBox(width: 4),
+                        Text(informe['tipo_informe'] ?? 'Desconocido'),
+                        const SizedBox(width: 16),
+                        const Icon(Icons.person, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Paciente: ${permiso['run_paciente']}'),
+                      ],
+                    ),
+                    const Divider(height: 32),
+                    if (informe['observaciones'] != null) ...[
+                      const Text(
+                        'Observaciones',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(informe['observaciones']),
+                      const SizedBox(height: 24),
+                    ],
+                    if (informe['archivos'] != null) ...[
+                      const Text(
+                        'Archivos Adjuntos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...(informe['archivos'] as List).map((archivo) {
+                        return Card(
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.description,
+                              color: Colors.blue,
+                            ),
+                            title: Text(archivo['nombre']),
+                            subtitle: Text(archivo['tipo'] ?? 'Documento'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.download),
+                              onPressed: () => _downloadFile(
+                                archivo['urlpath'],
+                                archivo['nombre'],
+                                archivo['formato'],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _downloadFile(String path, String name, String format) async {
+    try {
+      final token = await _authStorage.getToken();
+      if (token == null) return;
+
+      final url = await _apiService.getDownloadUrl(
+        path: path,
+        name: name,
+        format: format,
+        token: token,
+      );
+
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw Exception('No se pudo abrir la URL');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al abrir archivo: $e')));
+      }
+    }
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
