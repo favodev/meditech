@@ -24,7 +24,7 @@ export class InformeController {
   constructor(
     private readonly informeService: InformeService,
     private readonly estadisticasService: EstadisticasService,
-  ) {}
+  ) { }
 
   @Get()
   async findAll(@Request() req) {
@@ -90,5 +90,37 @@ export class InformeController {
   @Get('estadisticas')
   async getEstadisticas(@Request() req) {
     return this.estadisticasService.getResumenClinico(req.user.run);
+  }
+
+  @Post('calcular-intervalo')
+  async calcularTtrIntervalo(@Request() req, @Body() body: any) {
+    const inrActual = body.inr_actual;
+
+    if (inrActual === undefined) {
+      throw new BadRequestException('El valor de inr_actual es requerido.');
+    }
+
+    const runPaciente = req.user.tipo_usuario === TipoUsuario.PACIENTE
+      ? req.user.run
+      : body.run_paciente;
+
+    if (!runPaciente) {
+      throw new BadRequestException('RUN del paciente no especificado.');
+    }
+
+    const fechaActual = new Date();
+
+    const ttrIntervalo = await this.estadisticasService.getTtrIntervalo(
+      runPaciente,
+      inrActual,
+      fechaActual,
+    );
+
+    return {
+      ttr_intervalo: ttrIntervalo,
+      mensaje: ttrIntervalo === null
+        ? 'No existe un control anterior para calcular el intervalo.'
+        : 'Cálculo de tramo realizado con éxito.'
+    };
   }
 }

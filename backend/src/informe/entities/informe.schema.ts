@@ -70,6 +70,10 @@ export class Informe extends Document {
 
   @Prop({ type: [ArchivoSchema] })
   archivos: Archivo[];
+
+  createdAt: Date;
+  
+  updatedAt: Date;
 }
 
 export const InformeSchema = SchemaFactory.createForClass(Informe);

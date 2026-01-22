@@ -329,7 +329,8 @@ class ApiService {
   Future<Map<String, dynamic>> createInforme({
     required String titulo,
     required String tipoInforme,
-    required String runMedico,
+    String? runMedico,
+    String? runPaciente,
     String? observaciones,
     Map<String, dynamic>? contenidoClinico,
     List<File>? files,
@@ -349,7 +350,10 @@ class ApiService {
       final informeData = {
         'titulo': titulo,
         'tipo_informe': tipoInforme,
-        'run_medico': runMedico,
+        if (runMedico != null && runMedico.isNotEmpty)
+          'run_medico': runMedico,
+        if (runPaciente != null && runPaciente.isNotEmpty)
+          'run_paciente': runPaciente,
         if (observaciones != null && observaciones.isNotEmpty)
           'observaciones': observaciones,
         if (contenidoClinico != null) 'contenido_clinico': contenidoClinico,
@@ -1164,4 +1168,34 @@ class ApiService {
 
     return response.statusCode == 201 || response.statusCode == 200;
   }
+
+  Future<Map<String, dynamic>> calcularTtrIntervalo(
+    double inrActual, {
+    String? runPaciente,
+  }) async {
+    try {
+      final response = await _requestWithAutoRefresh((token) {
+        return http.post(
+          Uri.parse('$baseUrl/informe/calcular-intervalo'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'inr_actual': inrActual,
+            if (runPaciente != null) 'run_paciente': runPaciente,
+          }),
+        );
+      });
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      throw Exception('Error al calcular el TTR del intervalo');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
 }

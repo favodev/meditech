@@ -16,7 +16,7 @@ export class EstadisticasService {
   constructor(
     @InjectModel(Informe.name) private informeModel: Model<Informe>,
     @InjectModel(Usuario.name) private userModel: Model<Usuario>,
-  ) {}
+  ) { }
 
   async getResumenClinico(runPaciente: string) {
     const paciente = await this.userModel.findOne({ run: runPaciente }).exec();
@@ -103,6 +103,38 @@ export class EstadisticasService {
     return totalDiasEvaluados === 0
       ? 0
       : parseFloat(((diasEnRango / totalDiasEvaluados) * 100).toFixed(2));
+  }
+
+
+  async getTtrIntervalo(runPaciente: string, inrNuevo: number, fechaNueva: Date) {
+    const ultimoInforme = await this.informeModel
+      .findOne({
+        run_paciente: runPaciente,
+        tipo_informe: 'Control de Anticoagulación',
+      })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    if (!ultimoInforme || !ultimoInforme.contenido_clinico?.inr_actual) {
+      return null;
+    }
+
+    const paciente = await this.userModel.findOne({ run: runPaciente }).exec();
+    const rangoMin = paciente?.datos_anticoagulacion?.rango_meta?.min || 2.0;
+    const rangoMax = paciente?.datos_anticoagulacion?.rango_meta?.max || 3.0;
+
+    const historialIntervalo = [
+      {
+        fecha: ultimoInforme.createdAt,
+        inr: ultimoInforme.contenido_clinico.inr_actual,
+      },
+      {
+        fecha: fechaNueva,
+        inr: inrNuevo,
+      },
+    ];
+
+    return this.calcularRosendaalTTR(historialIntervalo, rangoMin, rangoMax);
   }
 }
 

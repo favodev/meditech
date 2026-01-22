@@ -4,9 +4,12 @@ import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 
 import 'package:meditech/screens/edit_shared_report_screen.dart';
+import 'informes_screen.dart';
+import '../services/auth_storage.dart';
 
 class PermisosCompartidosScreen extends StatefulWidget {
-  const PermisosCompartidosScreen({super.key});
+  final VoidCallback? onCreateInforme;
+  const PermisosCompartidosScreen({super.key, this.onCreateInforme});
 
   @override
   State<PermisosCompartidosScreen> createState() =>
@@ -19,11 +22,22 @@ class _PermisosCompartidosScreenState extends State<PermisosCompartidosScreen> {
 
   bool _isLoading = true;
   List<dynamic> _permisos = [];
+  bool _isMedico = false;
 
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
     _loadPermisos();
+  }
+
+  Future<void> _loadUserRole() async {
+    final user = await _authStorage.getUser();
+    if (mounted && user != null) {
+      setState(() {
+        _isMedico = user.tipoUsuario == 'Medico';
+      });
+    }
   }
 
   Future<void> _loadPermisos() async {
@@ -233,6 +247,24 @@ class _PermisosCompartidosScreenState extends State<PermisosCompartidosScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
+                    const SizedBox(height: 24),
+                    if (_isMedico && widget.onCreateInforme != null)
+                      ElevatedButton.icon(
+                        onPressed: widget.onCreateInforme,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Nuevo Informe'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2196F3),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -363,23 +395,6 @@ class _PermisosCompartidosScreenState extends State<PermisosCompartidosScreen> {
                                   ),
                                 ),
                               ),
-                              if (activo) ...[
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () =>
-                                        _revocarPermiso(permiso['_id'], index),
-                                    icon: const Icon(Icons.block),
-                                    label: const Text('Revocar'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.orange,
-                                      side: const BorderSide(
-                                        color: Colors.orange,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ],
@@ -389,6 +404,14 @@ class _PermisosCompartidosScreenState extends State<PermisosCompartidosScreen> {
                 },
               ),
             ),
+      floatingActionButton: _isMedico && widget.onCreateInforme != null
+          ? FloatingActionButton.extended(
+              onPressed: widget.onCreateInforme,
+              backgroundColor: const Color(0xFF2196F3),
+              icon: const Icon(Icons.add),
+              label: const Text('Nuevo Informe'),
+            )
+          : null,
     );
   }
 

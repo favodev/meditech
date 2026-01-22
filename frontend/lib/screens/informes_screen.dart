@@ -15,7 +15,8 @@ import 'permisos_compartidos_screen.dart';
 
 class InformesScreen extends StatefulWidget {
   final String? initialFilter;
-  const InformesScreen({super.key, this.initialFilter});
+  final bool forceMedicoCreate;
+  const InformesScreen({super.key, this.initialFilter, this.forceMedicoCreate = false});
 
   @override
   State<InformesScreen> createState() => _InformesScreenState();
@@ -427,12 +428,14 @@ class _InformesScreenState extends State<InformesScreen> {
       debugPrint('🔄 Enviando informe al servidor...');
       debugPrint('  Título: ${result['titulo']}');
       debugPrint('  Tipo: ${result['tipoInforme']}');
-      debugPrint('  RUN Médico: ${result['runMedico']}');
+      debugPrint('  RUN Médico: ${result['runMedico'] ?? "-"}');
+      debugPrint('  RUN Paciente: ${result['runPaciente'] ?? "-"}');
       debugPrint('  Archivos: ${files.length}');
 
       final titulo = result['titulo'] as String? ?? '';
       final tipoInforme = result['tipoInforme'] as String? ?? '';
       final runMedico = result['runMedico'] as String? ?? '';
+      final runPaciente = result['runPaciente'] as String? ?? '';
       final observaciones = result['observaciones'] as String? ?? '';
       final contenidoClinico =
           result['contenidoClinico'] as Map<String, dynamic>?;
@@ -441,6 +444,7 @@ class _InformesScreenState extends State<InformesScreen> {
         titulo: titulo,
         tipoInforme: tipoInforme,
         runMedico: runMedico,
+        runPaciente: runPaciente,
         observaciones: observaciones,
         contenidoClinico: contenidoClinico,
         files: files,
@@ -492,6 +496,7 @@ class _InformesScreenState extends State<InformesScreen> {
   }) async {
     final tituloController = TextEditingController();
     final runMedicoController = TextEditingController();
+    final isMedico = _currentUser?.tipoUsuario == 'Medico';
     final observacionesController = TextEditingController();
     final inrController = TextEditingController();
 
@@ -613,12 +618,16 @@ class _InformesScreenState extends State<InformesScreen> {
                     const SizedBox(height: 16),
                     TextField(
                       controller: runMedicoController,
-                      decoration: const InputDecoration(
-                        labelText: 'RUN del médico *',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: isMedico
+                            ? 'RUN del paciente *'
+                            : 'RUN del médico *',
+                        border: const OutlineInputBorder(),
                         hintText: '12345678-9',
-                        prefixIcon: Icon(Icons.person),
-                        helperText: 'RUN del médico que emitió el informe',
+                        prefixIcon: const Icon(Icons.person),
+                        helperText: isMedico
+                            ? 'RUN del paciente para registrar el informe'
+                            : 'RUN del médico que emitió el informe',
                         helperMaxLines: 2,
                       ),
                       keyboardType: TextInputType.text,
@@ -775,7 +784,7 @@ class _InformesScreenState extends State<InformesScreen> {
                     if (runMedicoController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Por favor ingresa el RUN del médico'),
+                          content: Text('Por favor ingresa el RUN requerido'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -878,7 +887,7 @@ class _InformesScreenState extends State<InformesScreen> {
                       Navigator.pop(context, <String, dynamic>{
                         'titulo': retTitulo,
                         'tipoInforme': selectedTipo!.nombre,
-                        'runMedico': retRun,
+                        if (isMedico) 'runPaciente': retRun else 'runMedico': retRun,
                         'observaciones': retObs,
                         'contenidoClinico': contenidoClinico,
                       });
@@ -1623,6 +1632,14 @@ class _InformesScreenState extends State<InformesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMedico = _currentUser?.tipoUsuario == 'Medico';
+
+    // Para médicos, por defecto mostrar "Compartidos conmigo" a menos que se fuerce la vista de creación
+    // El flujo de creación se lanza directamente desde esta pantalla para no redirigir
+    if (isMedico && !widget.forceMedicoCreate) {
+      return PermisosCompartidosScreen(onCreateInforme: _pickAndUploadFile);
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

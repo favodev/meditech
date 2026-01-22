@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _estadisticas;
   List<TipoInforme> _tiposInforme = [];
   bool _isLoading = true;
+  int _sharedCount = 0;
 
   @override
   void initState() {
@@ -51,6 +52,17 @@ class _HomeScreenState extends State<HomeScreen> {
             .map((json) => Informe.fromJson(json))
             .toList();
 
+        // 4. Si es médico, contar informes compartidos conmigo
+        var sharedCount = _sharedCount;
+        if (user.tipoUsuario == 'Medico') {
+          try {
+            final permisos = await _apiService.getPermisosCompartidos(token);
+            sharedCount = permisos.length;
+          } catch (e) {
+            debugPrint('Error cargando permisos compartidos: $e');
+          }
+        }
+
         // Obtener los 3 más recientes
         informesList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -59,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _tiposInforme = tipos;
           _recentInformes = informesList.take(3).toList();
           _isLoading = false;
+          _sharedCount = sharedCount;
         });
       }
     } catch (e) {
@@ -102,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 24),
 
                       // Resumen Clínico (TTR)
-                      _buildClinicalSummary(),
+                      _buildRoleSummary(),
                       const SizedBox(height: 24),
 
                       // Categorías
@@ -177,7 +190,73 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildClinicalSummary() {
+  Widget _buildRoleSummary() {
+    final isMedico = _currentUser?.tipoUsuario == 'Medico';
+
+    if (isMedico) {
+      return Card(
+        elevation: 0,
+        color: Colors.blue[50],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: Colors.blue[200]!,
+            width: 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.folder_shared, color: Color(0xFF1976D2)),
+                      SizedBox(width: 8),
+                      Text(
+                        'Informes compartidos contigo',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Text(
+                      '$_sharedCount',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF1976D2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Informes que otros usuarios han compartido contigo para tu revisión.',
+                style: TextStyle(color: Colors.black87, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (_estadisticas == null || _estadisticas!.isEmpty) {
       return const SizedBox.shrink();
     }
